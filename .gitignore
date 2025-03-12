@@ -1,0 +1,20 @@
+# Node.js (React)
+front/node_modules/
+front/build/
+
+# Laravel (PHP)
+back/vendor/
+back/storage/
+back/bootstrap/cache/
+back/.env
+
+# Docker
+**/.env
+**/.env.example
+**/docker-compose.override.yml
+**/pgdata/
+**/logs/
+**/tmp/
+
+# System Files
+.DS_Store

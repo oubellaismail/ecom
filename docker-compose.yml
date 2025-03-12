@@ -1,0 +1,49 @@
+services:
+  back:
+    build: ./back
+    container_name: laravel_app
+    restart: always
+    depends_on:
+      - database
+    environment:
+      - APP_ENV=local
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./back:/var/www/html
+      - vendor:/var/www/html/vendor
+    networks:
+      - app_network
+
+  front:
+    build: ./front
+    container_name: react_app
+    restart: always
+    depends_on:
+      - back
+    ports:
+      - "3000:3000"
+    networks:
+      - app_network
+
+  database:
+    image: postgres:latest
+    container_name: pgsql_db
+    restart: always
+    environment:
+      POSTGRES_DB: ecommerce
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: just
+    ports:
+      - "5432:5432"
+    networks:
+      - app_network
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+networks:
+  app_network:
+
+volumes:
+  pgdata:
+  vendor:
