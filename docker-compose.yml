@@ -1,17 +1,29 @@
+version: '3.8'
+
 services:
   back:
-    build: ./back
+    build:
+      context: ./back
+      args:
+        user: myuser  # Specify the user name here
+        uid: 1000     # Specify the user ID here (it can be any valid UID)
     container_name: laravel_app
     restart: always
     depends_on:
       - database
     environment:
       - APP_ENV=local
+      - DB_CONNECTION=pgsql
+      - DB_HOST=database  # Ensure this is pointing to the correct database service
+      - DB_PORT=5432
+      - DB_DATABASE=ecommerce
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=just
     ports:
       - "8000:8000"
     volumes:
       - ./back:/var/www/html
-      - vendor:/var/www/html/vendor
+      - vendor:/var/www/html/vendor  # Persist the vendor directory
     networks:
       - app_network
 
@@ -39,11 +51,12 @@ services:
     networks:
       - app_network
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data  # Persist PostgreSQL data
 
 networks:
   app_network:
+    driver: bridge
 
 volumes:
   pgdata:
-  vendor:
+  vendor:  # Persist the Laravel vendor directory for caching dependencies
