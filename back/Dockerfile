@@ -40,8 +40,7 @@ RUN mkdir -p storage bootstrap/cache vendor && \
 USER $user
 
 # Run composer install
-RUN composer install --no-dev --optimize-autoloader --prefer-dist
-
+RUN composer install --no-dev --prefer-dist --no-interaction --no-progress
 # Expose port 8000
 EXPOSE 8000
 
