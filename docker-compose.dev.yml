@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  back:
+    ports:
+      - "8000:8000"  # Expose Laravel backend on localhost
+
+  front:
+    build: 
+      context: ./front
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"  # Expose React frontend on localhost
+    volumes:
+      - ./front:/app
+      - /app/node_modules  # Prevent conflicts with mounted code
+
+  database:
+    ports:
+      - "5432:5432"  # Allow local access to PostgreSQL
