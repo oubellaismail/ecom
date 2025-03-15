@@ -1,23 +1,6 @@
 version: '3.8'
 
 services:
-  nginx:
-    image: nginx:latest
-    container_name: nginx_proxy
-    restart: always
-    depends_on:
-      - back
-      - front
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-        - ./ssl:/etc/nginx/ssl                 # Mount SSL certificates directory
-
-    networks:
-      - app_network
-
   back:
     build:
       context: ./back
@@ -25,7 +8,6 @@ services:
         user: myuser
         uid: 1000
     container_name: laravel_app
-    restart: always
     depends_on:
       - database
     environment:
@@ -36,8 +18,6 @@ services:
       - DB_DATABASE=ecommerce
       - DB_USERNAME=postgres
       - DB_PASSWORD=just
-    ports:
-      - "8000:8000"
     volumes:
       - ./back:/var/www/html
       - vendor:/var/www/html/vendor
@@ -47,20 +27,16 @@ services:
   front:
     build: ./front
     container_name: react_app
-    restart: always
     networks:
       - app_network
 
   database:
     image: postgres:latest
     container_name: pgsql_db
-    restart: always
     environment:
       POSTGRES_DB: ecommerce
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: just
-    ports:
-      - "5432:5432"
     networks:
       - app_network
     volumes:

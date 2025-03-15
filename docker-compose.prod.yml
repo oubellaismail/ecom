@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:latest
+    container_name: nginx_proxy
+    restart: always
+    depends_on:
+      - back
+      - front
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl  # Mount SSL certificates
+    networks:
+      - app_network
+
+  back:
+    restart: always
+
+  front:
+    build:
+      context: ./front
+      dockerfile: Dockerfile.prod
+    restart: always
+
+  database:
+    restart: always
