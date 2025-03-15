@@ -13,12 +13,17 @@ services:
       - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./ssl:/etc/nginx/ssl  # Mount SSL certificates
+      - ./ssl:/etc/nginx/ssl
     networks:
       - app_network
 
   back:
+    build:
+      context: ./back
+      dockerfile: Dockerfile.prod
     restart: always
+    environment:
+      - APP_ENV=production
 
   front:
     build:

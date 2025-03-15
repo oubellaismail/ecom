@@ -25,7 +25,9 @@ services:
       - app_network
 
   front:
-    build: ./front
+    build:
+      context: ./front
+      dockerfile: Dockerfile.dev
     container_name: react_app
     networks:
       - app_network

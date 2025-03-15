@@ -18,7 +18,7 @@ Follow these steps to set up and run the project locally in a Docker container.
 
 ```bash
 git clone https://github.com/oubellaismail/ecom.git
-cd 3assasa-ecom
+cd ecom
 ```
 
 ### 2. Configure the `.env` file
@@ -39,7 +39,7 @@ DB_PASSWORD=just
 Build and start the Docker container using the following command:
 
 ```bash
-docker-compose up -d
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 ```
 
 This will:
