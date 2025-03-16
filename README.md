@@ -23,6 +23,12 @@ cd ecom
 
 ### 2. Configure the `.env` file
 
+Make your `.env` file : 
+
+```bash
+cp back/.env.example back/.env
+```
+
 Make sure to configure the database connection in the `.env` file. Update the database settings as follows:
 
 ```env
@@ -52,7 +58,7 @@ This will:
 Once the containers are up, you’ll need to generate the Laravel application key:
 
 ```bash
-docker-compose exec app php artisan key:generate
+docker exec -it laravel_app php artisan key:generate
 ```
 
 This will generate the application key and update the `.env` file in the container.
@@ -62,7 +68,7 @@ This will generate the application key and update the `.env` file in the contain
 Run the Laravel migrations to set up the database:
 
 ```bash
-docker-compose exec app php artisan migrate
+docker exec -it laravel_app php artisan migrate
 ```
 
 This will apply any pending migrations to your PostgreSQL database.
