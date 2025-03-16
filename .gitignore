@@ -4,9 +4,26 @@ front/build/
 
 # Laravel (PHP)
 back/vendor/
-back/storage/
-back/bootstrap/cache/
+back/node_modules/
 back/.env
+back/.env.backup
+back/.phpunit.result.cache
+
+# Keep Laravel directories but ignore their contents
+back/storage/*
+!back/storage/.gitkeep
+!back/storage/app/.gitkeep
+!back/storage/app/public/.gitkeep
+!back/storage/framework/.gitkeep
+!back/storage/framework/cache/.gitkeep
+!back/storage/framework/cache/data/.gitkeep
+!back/storage/framework/sessions/.gitkeep
+!back/storage/framework/testing/.gitkeep
+!back/storage/framework/views/.gitkeep
+!back/storage/logs/.gitkeep
+
+back/bootstrap/cache/*
+!back/bootstrap/cache/.gitkeep
 
 # Docker
 **/.env
