@@ -10,7 +10,6 @@ back/.env
 
 # Docker
 **/.env
-**/.env.example
 **/docker-compose.override.yml
 **/pgdata/
 **/logs/

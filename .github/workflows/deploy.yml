@@ -3,7 +3,7 @@ name: Deploy to Server
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   build:
@@ -15,9 +15,9 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          docker login -u ${{ secrets.DOCKER_USER }} -p ${{ secrets.DOCKER_PASSWORD }}
-          docker build -t your-dockerhub-username/your-app:latest .
-          docker push your-dockerhub-username/your-app:latest
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USER }}" --password-stdin
+          docker build -t ${{ secrets.DOCKER_USER }}/your-app:latest .
+          docker push ${{ secrets.DOCKER_USER }}/your-app:latest
 
       - name: Deploy to server via SSH
         uses: appleboy/ssh-action@v0.1.10
@@ -26,7 +26,16 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            docker pull your-dockerhub-username/your-app:latest
+            docker pull ${{ secrets.DOCKER_USER }}/your-app:latest
             docker stop your-app || true
             docker rm your-app || true
-            docker run -d --name your-app -p 80:80 your-dockerhub-username/your-app:latest
+            docker run -d --name your-app -p 80:80 \
+              -e APP_KEY=${{ secrets.APP_KEY }} \
+              -e DB_CONNECTION=mysql \
+              -e DB_HOST=${{ secrets.DB_HOST }} \
+              -e DB_DATABASE=${{ secrets.DB_DATABASE }} \
+              -e DB_USERNAME=${{ secrets.DB_USERNAME }} \
+              -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+              ${{ secrets.DOCKER_USER }}/your-app:latest
+
+            docker exec your-app php artisan migrate --force

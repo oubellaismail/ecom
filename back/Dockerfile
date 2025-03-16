@@ -31,7 +31,7 @@ WORKDIR /var/www/html
 # Copy Laravel project files
 COPY --chown=$user:$user . .
 
-# Set permissions
+# Set permissions - ensuring bootstrap/cache exists and has correct permissions
 RUN mkdir -p storage bootstrap/cache vendor && \
     chmod -R 775 storage bootstrap/cache vendor && \
     chown -R $user:$user /var/www/html
@@ -41,6 +41,7 @@ USER $user
 
 # Run composer install
 RUN composer install --no-dev --prefer-dist --no-interaction --no-progress
+
 # Expose port 8000
 EXPOSE 8000
 
