@@ -42,6 +42,9 @@ USER $user
 # Run composer install
 RUN composer install --no-dev --prefer-dist --no-interaction --no-progress
 
+# Install PHPStan and Psalm for Static Analysis
+RUN composer global require phpstan/phpstan vimeo/psalm
+
 # Expose port 8000
 EXPOSE 8000
 
