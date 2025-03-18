@@ -4,6 +4,7 @@ services:
   back:
     build:
       context: ./back
+      dockerfile: Dockerfile.dev
       args:
         user: myuser
         uid: 1000
