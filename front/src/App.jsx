@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import logo from './img.jpg';
 
 import './App.css';
+import Header from './components/Header';
 
 const App = () => {
   const [dots, setDots] = useState('');
@@ -15,6 +16,8 @@ const App = () => {
   }, []);
 
   return (
+    <>
+    <Header />
     <div className="coming-soon-container">
       <div className="content-wrapper">
         <div className="image-container">
@@ -33,6 +36,7 @@ const App = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
