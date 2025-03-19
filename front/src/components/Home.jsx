@@ -1,14 +1,15 @@
-import React from 'react'
+import React from 'react';
+import Header from './Header.jsx';  
+import Footer from './Footer';  // Assurez-vous que le chemin est correct
 
 function Home() {
   return (
     <>
-    <div>Home</div>
-    <Link to="/signup">signup</Link>
-    <Link to="/login">login</Link>
-    
+      <Header />
+      
+      <Footer />
     </>
-  )
+  );
 }
 
-export default Home
+export default Home;
