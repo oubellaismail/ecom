@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import logo from './img.jpg';
+import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react'
 
 import './App.css';
 import Header from './components/Header';
@@ -17,7 +18,14 @@ const App = () => {
 
   return (
     <>
-    <Header />
+    <header>
+      <SignedOut>
+        <SignInButton />
+      </SignedOut>
+      <SignedIn>
+        <UserButton />
+      </SignedIn>
+    </header>
     <div className="coming-soon-container">
       <div className="content-wrapper">
         <div className="image-container">
