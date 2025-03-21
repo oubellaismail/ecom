@@ -1,7 +1,5 @@
+# Use official PHP 8.2 FPM image
 FROM php:8.2-fpm
-
-ARG user
-ARG uid
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -25,12 +23,20 @@ RUN mkdir -p /home/$user && chown -R $user:$user /home/$user
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working directory to match volume mount point
+
+# Set working directory
 WORKDIR /var/www/html
 
 # Copy Laravel project files
-COPY --chown=$user:$user . .
+COPY . .
 
+# Copy entrypoint script inside the container
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+
+
+# Ensure storage and cache directories have proper permissions
 # Set permissions - ensuring bootstrap/cache exists and has correct permissions
 RUN mkdir -p storage bootstrap/cache vendor && \
     chmod -R 775 storage bootstrap/cache vendor && \
@@ -42,8 +48,11 @@ USER $user
 # Run composer install
 RUN composer install --no-dev --prefer-dist --no-interaction --no-progress
 
-# Expose port 8000
+# Expose Laravel application port
 EXPOSE 8000
 
-# Start Laravel server
-ENTRYPOINT ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+# Set entrypoint script to run when container starts
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+
+# Default command to start Laravel server
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
