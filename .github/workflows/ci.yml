@@ -1,0 +1,58 @@
+name: Security Analysis
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  security_analysis:
+    name: Static Code Analysis
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: laravel
+          MYSQL_USER: user
+          MYSQL_PASSWORD: password
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Docker
+        run: |
+          docker-compose -f docker-compose.yml up -d --build
+
+      # Run PHPStan in Laravel Container
+      - name: Run PHPStan in Laravel Container
+        run: |
+          docker exec -i $(docker ps -q --filter "name=laravel") php /root/.composer/vendor/bin/phpstan analyse --level=max /var/www/app/
+
+      # Run Psalm in Laravel Container
+      - name: Run Psalm in Laravel Container
+        run: |
+          docker exec -i $(docker ps -q --filter "name=laravel") php /root/.composer/vendor/bin/psalm --output-format=github
+
+      # Run ESLint in React Container
+      - name: Run ESLint in React Container
+        run: |
+          docker exec -i $(docker ps -q --filter "name=react") npx eslint /app/src/
+
+      # Run Trivy for Docker Security Scanning
+      - name: Scan Docker Image for Vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'your-container-image'
+          format: 'table'
+          exit-code: 1
