@@ -1,6 +1,10 @@
 # Use official PHP 8.2 FPM image
 FROM php:8.2-fpm
 
+# Define ARG for user and uid (with defaults)
+ARG user=laravel
+ARG uid=1000
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
@@ -13,6 +17,9 @@ RUN apt-get update && apt-get install -y \
     libpq-dev && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Update CA certificates
+RUN update-ca-certificates
+
 # Install PHP extensions
 RUN docker-php-ext-install pdo_pgsql pdo_mysql mbstring exif pcntl bcmath gd
 
@@ -23,36 +30,44 @@ RUN mkdir -p /home/$user && chown -R $user:$user /home/$user
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy Laravel project files
+# Copy composer files first for better caching
+COPY composer.json composer.lock ./
+
+# Install dependencies
+# RUN composer install --no-scripts --no-autoloader
+
+# Run composer install
+RUN composer install --no-dev --prefer-dist --no-interaction --no-progress
+
+
+# Copy the rest of the application
 COPY . .
 
 # Copy entrypoint script inside the container
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-
-
 # Ensure storage and cache directories have proper permissions
-# Set permissions - ensuring bootstrap/cache exists and has correct permissions
 RUN mkdir -p storage bootstrap/cache vendor && \
     chmod -R 775 storage bootstrap/cache vendor && \
     chown -R $user:$user /var/www/html
 
+# Generate autoloader and run scripts
+RUN composer dump-autoload --optimize
+
 # Switch to user
 USER $user
-
-# Run composer install
-RUN composer install --no-dev --prefer-dist --no-interaction --no-progress
 
 # Expose Laravel application port
 EXPOSE 8000
 
 # Set entrypoint script to run when container starts
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+
+RUN php artisan install:api && yes | php artisan migrate
 
 # Default command to start Laravel server
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]

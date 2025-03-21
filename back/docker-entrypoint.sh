@@ -1,10 +1,12 @@
 #!/bin/bash
-set -e  # Exit on error
+
+set -ex  # Exit on error
 
 # Check if .env exists, if not, copy .env.example
 if [ ! -f .env ]; then
     cp .env.example .env
     echo "Copied .env.example to .env"
+    php artisan key:generate
 fi
 
 # Append database configuration to .env
@@ -23,8 +25,6 @@ echo "Updated .env database configuration"
 fi
 
 # Generate app key
-php artisan key:generate
-
 if ! grep -q '"sanctum":' composer.json; then
     echo "Sanctum not found in composer.json. Running install:api..."
     php artisan install:api
@@ -33,7 +33,6 @@ else
 fi
 
 # Run migrations (uncomment if needed)
-# php artisan migrate --force
 
 # Start the application (keep container running)
 exec "$@"
