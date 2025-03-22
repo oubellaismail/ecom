@@ -3,8 +3,8 @@ import React from 'react'
 
 function Login() {
   return (
-  
-
+  <>
+    <Header />
 <section className="bg-white dark:bg-gray-900">
   <div className="lg:grid lg:min-h-screen lg:grid-cols-12">
     <section className="relative flex h-32 items-end bg-gray-900 lg:col-span-5 lg:h-full xl:col-span-6">
@@ -78,6 +78,7 @@ function Login() {
     </main>
   </div>
 </section>
+</>
   )
 }
 
