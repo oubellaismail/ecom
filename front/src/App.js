@@ -25,7 +25,7 @@ const App = () => {
           />
         </div>
         
-        <h1 className="main-title">3assasa ecom</h1>
+        <h1 className="main-title">3assasaassss ecom</h1>
         <h2 className="subtitle">Coming soon</h2>
         
         <div className="loading-container">
