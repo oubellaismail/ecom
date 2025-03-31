@@ -1,0 +1,60 @@
+name: Security Analysis
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  security_analysis:
+    name: Static Code Analysis
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_DB: ecommerce
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: just
+        ports:
+          - 5432:5432
+        options: --health-cmd="pg_isready -U postgres" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Docker
+        run: |
+          docker-compose -f docker-compose.yml up -d --build
+
+      # Run PHPStan for Laravel Backend
+      - name: Run PHPStan in Backend Container
+        run: |
+          docker exec -i $(docker ps -q --filter "name=laravel_app") php /root/.composer/vendor/bin/phpstan analyse --level=max /var/www/html/
+
+      # Run Psalm for Laravel Backend
+      - name: Run Psalm in Backend Container
+        run: |
+          docker exec -i $(docker ps -q --filter "name=laravel_app") php /root/.composer/vendor/bin/psalm --output-format=github
+
+      # Run ESLint for React Frontend
+      - name: Run ESLint in Frontend Container
+        run: |
+          docker exec -i $(docker ps -q --filter "name=react_app") npx eslint /app/src/
+
+      # Scan Backend Image with Trivy
+      - name: Scan Backend Docker Image for Vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'ecom-back:latest'
+          format: 'table'
+          exit-code: 1
+
+      # Scan Frontend Image with Trivy
+      - name: Scan Frontend Docker Image for Vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'ecom-front:latest'
+          format: 'table'
+          exit-code: 1

@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -12,11 +13,16 @@ Route::get('/test', function(Request $req) {
         'token' => "helo",
         'user' => "user"
     ]);
-    Route::apiResource('products', ProductController::class);
-    
-    // Logout route
-    Route::post('/logout', 'App\Http\Controllers\API\AuthController@logout');
 });
 
-Route::post('/login', 'App\Http\Controllers\API\AuthController@login');
-Route::post('/register', 'App\Http\Controllers\API\AuthController@register');
+Route::post('/login', [AuthController::class, 'login'])->name("login");
+Route::post('/register', [AuthController::class, 'register']);
+
+Route::middleware(['auth', 'sanctum'])->group(function () {
+    Route::apiResource('products', ProductController::class);
+    Route::post('/logout', [AuthController::class, 'logout']);
+
+    
+});
+
+

@@ -2,75 +2,76 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Http\Request;
+use App\Http\Requests\LoginRequest;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use App\Http\Requests\RegisterRequest;
 use Illuminate\Support\Facades\Validator;
+
 
 class AuthController extends Controller
 {
-    public function register(Request $request)
+    public function register(RegisterRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
-
-        $token = $user->createToken('auth_token')->plainTextToken;
-
+    
         return response()->json([
             'success' => true,
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => $user,
+            'message' => 'User registered successfully',
         ], 201);
     }
 
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
+        $user = User::where(function ($query) use ($request) {
+            $query->where('email', $request['identifier'])
+                  ->orWhere('name', $request['identifier']);
+        })->first();
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        if (!$user || !Hash::check($request['password'], $user->password)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid login credentials'
             ], 401);
         }
 
-        $user = User::where('email', $request->email)->firstOrFail();
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $accessToken = $user->createToken('access_token')->plainTextToken;
+        $refreshToken = $user->createToken('refresh_token', ['*'], now()->addDays(30))->plainTextToken; 
 
         return response()->json([
             'success' => true,
-            'access_token' => $token,
-            'token_type' => 'Bearer',
+            'access_token' => $accessToken,
+            'refresh_token' => $refreshToken,
             'user' => $user,
+        ]);
+    }
+
+    public function refresh_token(Request $request) {
+        $refreshToken = $request->input('refresh_token');
+        
+        if (!$refreshToken) {
+            return response()->json(['message' => 'Refresh token is required'], 400);
+        }
+        
+        $token = PersonalAccessToken::findToken($refreshToken);
+        
+        if (!$token || !$token->can('refresh_token')) {
+            return response()->json(['message' => 'Invalid refresh token'], 401);
+        }
+        
+        $user = $token->tokenable;
+        $accessToken = $user->createToken('access_token')->plainTextToken;
+    
+        return response()->json([
+            'access_token' => $accessToken,
         ]);
     }
 
