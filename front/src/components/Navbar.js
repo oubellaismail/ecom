@@ -114,7 +114,7 @@ const Navbar = () => {
           
           {/* Right actions */}
           <div className="d-flex align-items-center ms-lg-auto mt-3 mt-lg-0">
-            <Link to="/account" className="btn p-2 me-2 rounded-circle" style={{
+            <Link to="/profile" className="btn p-2 me-2 rounded-circle" style={{
               background: 'rgba(236, 236, 236, 0.7)',
               color: '#333'
             }}>
