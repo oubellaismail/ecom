@@ -8,6 +8,10 @@ import FeaturedProducts from './components/FeaturedProducts';
 import NewArrivals from './components/NewArrivals';
 import Footer from './components/Footer';
 import Profile from './components/Profile';
+import Cart from './components/Cart.js'; 
+import Checkout from './components/Checkout.js'; 
+
+
 
 function HomePage() {
   return (
@@ -28,6 +32,9 @@ function App() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/" element={<HomePage />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/checkout" element={<Checkout />} />
+
       </Routes>
       <Footer />
     </Router>
