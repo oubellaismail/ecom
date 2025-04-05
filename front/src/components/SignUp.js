@@ -8,12 +8,12 @@ const SignUp = () => {
     lastName: '',
     email: '',
     password: '',
-    confirmPassword: '',
-    agreeTerms: false,
+    confirmPassword: ''
   });
 
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -21,11 +21,18 @@ const SignUp = () => {
       ...formData,
       [name]: type === 'checkbox' ? checked : value,
     });
+    setErrorMessage('');
+    setSuccessMessage('');
   };
-
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
+      if (formData.password !== formData.confirmPassword) {
+        setErrorMessage("Passwords do not match");
+        return;
+      }      
       const data = await registerUser(formData);
       setSuccessMessage('Account created successfully!');
       console.log('Registration successful:', data);
@@ -33,6 +40,7 @@ const SignUp = () => {
       setErrorMessage(error.message || 'Registration failed');
       console.error('Error:', error);
     }
+    setIsLoading(false);
   };
 
   return (
@@ -174,28 +182,11 @@ const SignUp = () => {
                   />
                 </div>
                 
-                {/* Terms checkbox */}
-                <div className="form-check mb-4">
-                  <input 
-                    className="form-check-input" 
-                    type="checkbox" 
-                    id="agreeTerms" 
-                    name="agreeTerms"
-                    checked={formData.agreeTerms}
-                    onChange={handleChange}
-                    style={{
-                      borderColor: '#ddd',
-                      backgroundColor: 'rgba(236, 236, 236, 0.7)'
-                    }}
-                    required
-                  />
-                  <label className="form-check-label" htmlFor="agreeTerms" style={{ fontSize: '0.9rem' }}>
-                    I agree to the <Link to="/terms" className="text-decoration-none" style={{ color: '#ff4d4d' }}>Terms & Conditions</Link>
-                  </label>
-                </div>
+              
                 
                 {/* Sign up button */}
                 <button 
+                  disabled={isLoading}
                   type="submit" 
                   className="btn w-100 mb-3"
                   style={{
@@ -207,7 +198,7 @@ const SignUp = () => {
                     boxShadow: '0 4px 15px rgba(255, 77, 77, 0.2)'
                   }}
                 >
-                  Create Account
+                   {isLoading ? 'Creating...' : 'Create Account'}
                 </button>
                 
                 {/* Separator */}
