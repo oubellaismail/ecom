@@ -1,16 +1,7 @@
 import axiosInstance from "./axiosInstance";
 
 export const registerUser = async (userData) => {
-  /*
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  return {
-    message: 'Mocked account creation success',
-    user: {
-      id: 1,
-      ...userData
-    }
-  };
-  */
+
   
   try {
     const response = await axiosInstance.post('/register', userData);
@@ -61,4 +52,31 @@ export const loginUser = async (credentials) => {
 
 export const logoutUser = () => {
   localStorage.removeItem('authToken');
+};
+export const AddProducts = async (userData) => {
+
+  
+  try {
+    const response = await axiosInstance.post('/products', userData);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.errors
+  ? { message: Object.values(error.response.data.errors).flat().join(', ') }
+  : error.response?.data || { message: 'Network Error' };
+  }
+  
+};
+
+export const AddCategories = async (userData) => {
+
+  
+  try {
+    const response = await axiosInstance.post('/categories', userData);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.errors
+  ? { message: Object.values(error.response.data.errors).flat().join(', ') }
+  : error.response?.data || { message: 'Network Error' };
+  }
+  
 };
