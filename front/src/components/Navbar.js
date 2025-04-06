@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import { Link , useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 // Simple SVG icons
 const CartIcon = () => (
@@ -25,6 +26,14 @@ const UserIcon = () => (
 );
 
 const Navbar = () => {
+  const { isLoggedIn, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/signin');
+  };
+  
   return (
     <nav className="navbar navbar-expand-lg sticky-top" style={{
       background: 'rgba(255, 255, 255, 0.8)',
@@ -132,6 +141,18 @@ const Navbar = () => {
                 3
               </span>
             </Link>
+            {isLoggedIn ?(<>
+              <Link onClick={handleLogout} to="/" className="btn ms-2" style={{
+              background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
+              color: 'white',
+              fontWeight: '500',
+              padding: '0.5rem 1.25rem',
+              borderRadius: '25px',
+              boxShadow: '0 4px 15px rgba(255, 77, 77, 0.2)'
+            }}>
+              Logout
+            </Link>
+            </>):(<>
             <Link to="/signup" className="btn ms-2" style={{
               background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
               color: 'white',
@@ -152,6 +173,10 @@ const Navbar = () => {
             }}>
               Sign In
             </Link>
+            </>)
+
+            }
+            
           </div>
         </div>
       </div>
