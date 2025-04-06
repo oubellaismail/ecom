@@ -58,3 +58,7 @@ export const loginUser = async (credentials) => {
     throw error.response ? error.response.data : { message: 'Network Error' };
   }
 };
+
+export const logoutUser = () => {
+  localStorage.removeItem('authToken');
+};
