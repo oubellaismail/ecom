@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link , useNavigate } from 'react-router-dom';
 import { registerUser } from '../api/authService';
 
 const SignUp = () => {
@@ -14,7 +14,8 @@ const SignUp = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
+  const navigate = useNavigate();
+  
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
@@ -36,6 +37,7 @@ const SignUp = () => {
       const data = await registerUser(formData);
       setSuccessMessage('Account created successfully!');
       console.log('Registration successful:', data);
+      setTimeout(() => navigate('/signin'), 1500);
     } catch (error) {
       setErrorMessage(error.message || 'Registration failed');
       console.error('Error:', error);
