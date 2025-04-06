@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link , useNavigate } from 'react-router-dom';
 import { loginUser } from '../api/authService';
+import { useAuth } from '../context/AuthContext';
+
 
 const SignIn = () => {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
@@ -8,6 +10,7 @@ const SignIn = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
   
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -21,6 +24,7 @@ const SignIn = () => {
     setIsLoading(true);
     try {
       const data = await loginUser(credentials);
+      login(data.token); 
       setSuccessMessage('Login successful!');
       console.log('Login success:', data);
       setTimeout(() => navigate('/dashboard'), 1500); 
