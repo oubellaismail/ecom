@@ -1,15 +1,34 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link , useNavigate } from 'react-router-dom';
+import { loginUser } from '../api/authService';
 
 const SignIn = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
+  const [credentials, setCredentials] = useState({ email: '', password: '' });
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setCredentials({ ...credentials, [name]: value });
+    setErrorMessage('');
+    setSuccessMessage('');
+  };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle sign in logic here
-    console.log({ email, password, rememberMe });
+    setIsLoading(true);
+    try {
+      const data = await loginUser(credentials);
+      setSuccessMessage('Login successful!');
+      console.log('Login success:', data);
+      setTimeout(() => navigate('/dashboard'), 1500); 
+    } catch (error) {
+      setErrorMessage(error.message || 'Login failed');
+      console.error('Login error:', error);
+    }
+    setIsLoading(false);
   };
 
   return (
@@ -36,7 +55,8 @@ const SignIn = () => {
                 </h1>
                 <p className="text-muted">Welcome back to your shopping journey</p>
               </div>
-              
+              {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
+              {successMessage && <div className="alert alert-success">{successMessage}</div>}
               <form onSubmit={handleSubmit}>
                 {/* Email field */}
                 <div className="mb-4">
@@ -45,9 +65,10 @@ const SignIn = () => {
                   </label>
                   <input 
                     type="email" 
-                    className="form-control" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    className="form-control"
+                    name='email' 
+                    value={credentials.email}
+                    onChange={handleChange}
                     placeholder="your@email.com" 
                     style={{
                       padding: '12px 16px',
@@ -74,9 +95,10 @@ const SignIn = () => {
                   </div>
                   <input 
                     type="password" 
-                    className="form-control" 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    className="form-control"
+                    name='password' 
+                    value={credentials.password}
+                    onChange={handleChange}
                     placeholder="Enter your password" 
                     style={{
                       padding: '12px 16px',
@@ -88,27 +110,10 @@ const SignIn = () => {
                   />
                 </div>
                 
-                {/* Remember me checkbox */}
-                <div className="form-check mb-4">
-                  <input 
-                    className="form-check-input" 
-                    type="checkbox" 
-                    id="rememberMe" 
-                    checked={rememberMe}
-                    onChange={() => setRememberMe(!rememberMe)}
-                    style={{
-                      borderColor: '#ddd',
-                      backgroundColor: 'rgba(236, 236, 236, 0.7)'
-                    }}
-                  />
-                  <label className="form-check-label" htmlFor="rememberMe" style={{ fontSize: '0.9rem' }}>
-                    Remember me for 30 days
-                  </label>
-                </div>
-                
                 {/* Sign in button */}
                 <button 
                   type="submit" 
+                  disabled={isLoading}
                   className="btn w-100 mb-3"
                   style={{
                     background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
@@ -119,10 +124,10 @@ const SignIn = () => {
                     boxShadow: '0 4px 15px rgba(255, 77, 77, 0.2)'
                   }}
                 >
-                  Sign In
+                  {isLoading ? 'Signing in...' : 'Sign In'}
                 </button>
                 
-                {/* Social login separator */}
+                {/* separator */}
                 <div className="d-flex align-items-center my-4">
                   <div className="flex-grow-1 border-bottom"></div>
                 </div>
