@@ -4,11 +4,11 @@ import { registerUser } from '../api/authService';
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    first_name: '',
+    last_name: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    password_confirmation: ''
   });
 
   const [errorMessage, setErrorMessage] = useState('');
@@ -29,7 +29,7 @@ const SignUp = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      if (formData.password !== formData.confirmPassword) {
+      if (formData.password !== formData.password_confirmation) {
         setErrorMessage("Passwords do not match");
         return;
       }      
@@ -79,7 +79,7 @@ const SignUp = () => {
                   </label>
                   <input 
                     type="text" 
-                    name="firstName"
+                    name="first_name"
                     className="form-control" 
                     value={formData.firstName}
                     onChange={handleChange}
@@ -101,7 +101,7 @@ const SignUp = () => {
                   </label>
                   <input 
                     type="text" 
-                    name="lastName"
+                    name="last_name"
                     className="form-control" 
                     value={formData.lastName}
                     onChange={handleChange}
@@ -167,9 +167,9 @@ const SignUp = () => {
                   </label>
                   <input 
                     type="password" 
-                    name="confirmPassword"
+                    name="password_confirmation"
                     className="form-control" 
-                    value={formData.confirmPassword}
+                    value={formData.password_confirmation}
                     onChange={handleChange}
                     placeholder="Confirm your password" 
                     style={{

@@ -1,6 +1,7 @@
 import axiosInstance from "./axiosInstance";
 
 export const registerUser = async (userData) => {
+  /*
   await new Promise(resolve => setTimeout(resolve, 1000));
   return {
     message: 'Mocked account creation success',
@@ -9,7 +10,8 @@ export const registerUser = async (userData) => {
       ...userData
     }
   };
-  /*
+  */
+  
   try {
     const response = await axiosInstance.post('/register', userData);
     return response.data;
@@ -18,7 +20,7 @@ export const registerUser = async (userData) => {
   ? { message: Object.values(error.response.data.errors).flat().join(', ') }
   : error.response?.data || { message: 'Network Error' };
   }
-  */
+  
 };
 
 export const requestPasswordReset = async (email) => {
