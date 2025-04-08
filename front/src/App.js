@@ -8,8 +8,8 @@ import FeaturedProducts from './components/FeaturedProducts';
 import NewArrivals from './components/NewArrivals';
 import Footer from './components/Footer';
 import Profile from './components/Profile';
-import Cart from './components/Cart.js'; 
-import Checkout from './components/Checkout.js'; 
+import Cart from './components/Cart.js';
+import Checkout from './components/Checkout.js';
 import ForgotPassword from './components/ForgotPassword.js';
 import ResetPassword from './components/ResetPassword.js';
 import AdminDashboard from './components/AdminDashboard.js';
@@ -29,6 +29,7 @@ function HomePage() {
 
 function App() {
   return (
+    // kadir is here
     <Router>
       <Navbar />
       <Routes>
