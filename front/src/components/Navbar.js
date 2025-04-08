@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link , useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 // Simple SVG icons
@@ -33,7 +33,7 @@ const Navbar = () => {
     logout();
     navigate('/signin');
   };
-  
+
   return (
     <nav className="navbar navbar-expand-lg sticky-top" style={{
       background: 'rgba(255, 255, 255, 0.8)',
@@ -52,14 +52,14 @@ const Navbar = () => {
         }}>
           3Ecom
         </Link>
-        
+
         {/* Navbar toggler */}
         <button className="navbar-toggler border-0 shadow-none" type="button" 
           data-bs-toggle="collapse" data-bs-target="#navbarContent"
           style={{color: '#333'}}>
           <span className="navbar-toggler-icon"></span>
         </button>
-        
+
         {/* Navbar content */}
         <div className="collapse navbar-collapse" id="navbarContent">
           {/* Main navigation */}
@@ -94,7 +94,7 @@ const Navbar = () => {
               </Link>
             </li>
           </ul>
-          
+
           {/* Search Bar */}
           <form className="d-flex position-relative my-3 my-lg-0 mx-lg-auto" style={{maxWidth: '300px'}}>
             <input
@@ -120,63 +120,67 @@ const Navbar = () => {
               <SearchIcon />
             </button>
           </form>
-          
+
           {/* Right actions */}
           <div className="d-flex align-items-center ms-lg-auto mt-3 mt-lg-0">
-            <Link to="/profile" className="btn p-2 me-2 rounded-circle" style={{
-              background: 'rgba(236, 236, 236, 0.7)',
-              color: '#333'
-            }}>
-              <UserIcon />
-            </Link>
-            <Link to="/cart" className="btn p-2 me-2 rounded-circle position-relative" style={{
-              background: 'rgba(236, 236, 236, 0.7)',
-              color: '#333'
-            }}>
-              <CartIcon />
-              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill" style={{
-                background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
-                fontSize: '0.65rem'
-              }}>
-                3
-              </span>
-            </Link>
-            {isLoggedIn ?(<>
-              <Link onClick={handleLogout} to="/" className="btn ms-2" style={{
-              background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
-              color: 'white',
-              fontWeight: '500',
-              padding: '0.5rem 1.25rem',
-              borderRadius: '25px',
-              boxShadow: '0 4px 15px rgba(255, 77, 77, 0.2)'
-            }}>
-              Logout
-            </Link>
-            </>):(<>
-            <Link to="/signup" className="btn ms-2" style={{
-              background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
-              color: 'white',
-              fontWeight: '500',
-              padding: '0.5rem 1.25rem',
-              borderRadius: '25px',
-              boxShadow: '0 4px 15px rgba(255, 77, 77, 0.2)'
-            }}>
-              Sign Up
-            </Link>
-            <Link to="/signin" className="btn ms-2" style={{
-              background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
-              color: 'white',
-              fontWeight: '500',
-              padding: '0.5rem 1.25rem',
-              borderRadius: '25px',
-              boxShadow: '0 4px 15px rgba(255, 77, 77, 0.2)'
-            }}>
-              Sign In
-            </Link>
-            </>)
+            {isLoggedIn && (
+              <>
+                <Link to="/profile" className="btn p-2 me-2 rounded-circle" style={{
+                  background: 'rgba(236, 236, 236, 0.7)',
+                  color: '#333'
+                }}>
+                  <UserIcon />
+                </Link>
+                <Link to="/cart" className="btn p-2 me-2 rounded-circle position-relative" style={{
+                  background: 'rgba(236, 236, 236, 0.7)',
+                  color: '#333'
+                }}>
+                  <CartIcon />
+                  <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill" style={{
+                    background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
+                    fontSize: '0.65rem'
+                  }}>
+                    3
+                  </span>
+                </Link>
+              </>
+            )}
 
-            }
-            
+            {isLoggedIn ? (
+              <Link onClick={handleLogout} to="/" className="btn ms-2" style={{
+                background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
+                color: 'white',
+                fontWeight: '500',
+                padding: '0.5rem 1.25rem',
+                borderRadius: '25px',
+                boxShadow: '0 4px 15px rgba(255, 77, 77, 0.2)'
+              }}>
+                Logout
+              </Link>
+            ) : (
+              <>
+                <Link to="/signup" className="btn ms-2" style={{
+                  background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
+                  color: 'white',
+                  fontWeight: '500',
+                  padding: '0.5rem 1.25rem',
+                  borderRadius: '25px',
+                  boxShadow: '0 4px 15px rgba(255, 77, 77, 0.2)'
+                }}>
+                  Sign Up
+                </Link>
+                <Link to="/signin" className="btn ms-2" style={{
+                  background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
+                  color: 'white',
+                  fontWeight: '500',
+                  padding: '0.5rem 1.25rem',
+                  borderRadius: '25px',
+                  boxShadow: '0 4px 15px rgba(255, 77, 77, 0.2)'
+                }}>
+                  Sign In
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

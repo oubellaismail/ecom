@@ -14,6 +14,8 @@ import ForgotPassword from './components/ForgotPassword.js';
 import ResetPassword from './components/ResetPassword.js';
 import AdminDashboard from './components/AdminDashboard.js';
 import Dashboard from './components/Dashboard.js';
+import EditProfile from './components/EditProfile.js';
+import ViewDetails from './components/ViewDetails.js';
 
 
 
@@ -42,6 +44,8 @@ function App() {
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/AdminDashboard" element={<AdminDashboard />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/edit-profile" element={<EditProfile />} />
+        <Route path="/product/:id" element={<ViewDetails />} />
 
       </Routes>
       <Footer />
