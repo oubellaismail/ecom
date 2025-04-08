@@ -3,26 +3,40 @@ import { useState } from 'react';
 const useProductManagement = (initialProducts = []) => {
     const [products, setProducts] = useState(initialProducts);
     const [formData, setFormData] = useState({
-        id: '',
         name: '',
         description: '',
         price: '',
-        category: '',
-        image: '',
-        inventory: ''
+        category_slug: '',
+        product_image: '',
+        qty_in_stock: ''
     });
     const [isEditing, setIsEditing] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
     const [activeTab, setActiveTab] = useState('products');
 
+
     // Handle form input changes
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({
-            ...formData,
-            [name]: name === 'price' || name === 'inventory' ? parseFloat(value) || '' : value,
-        });
+        const { name, value, type, files } = e.target;
+        if (type === 'file') {
+            const file = files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setFormData((prev) => ({
+                        ...prev,
+                        [name]: reader.result, // base64 string
+                    }));
+                };
+                reader.readAsDataURL(file);
+            }
+        } else {
+            setFormData((prev) => ({
+                ...prev,
+                [name]: name === 'price' || name === 'qty_in_stock' ? parseFloat(value) || '' : value,
+            }));
+        }
     };
 
     // Handle form submission for adding/editing products
@@ -40,15 +54,14 @@ const useProductManagement = (initialProducts = []) => {
                 // Update existing product
                 setProducts(prevProducts =>
                     prevProducts.map(product =>
-                        product.id === formData.id ? formData : product
+                        product.slug === formData.slug ? formData : product
                     )
                 );
                 setSuccessMessage('Product updated successfully!');
             } else {
                 // Add new product with a new ID
                 const newProduct = {
-                    ...formData,
-                    id: products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1
+                    ...formData
                 };
                 setProducts([...products, newProduct]);
                 setSuccessMessage('Product added successfully!');
@@ -82,13 +95,12 @@ const useProductManagement = (initialProducts = []) => {
     // Function to reset form
     const resetForm = () => {
         setFormData({
-            id: '',
             name: '',
             description: '',
             price: '',
-            category: '',
-            image: '',
-            inventory: ''
+            category_slug: '',
+            product_image: '',
+            qty_in_stock: ''
         });
         setIsEditing(false);
     };
