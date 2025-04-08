@@ -82,14 +82,18 @@ const NewArrivals = () => {
                     <p className="fw-bold mb-3">${item.price}</p>
                   </div>
                   <div className="d-grid">
-                    <Link to={`/product/${item.id}`} className="btn" style={{
-                      background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
-                      color: 'white',
-                      fontWeight: '500',
-                      padding: '0.75rem',
-                      borderRadius: '12px',
-                      boxShadow: '0 4px 15px rgba(255, 77, 77, 0.2)'
-                    }}>
+                    <Link 
+                      to={`/product/${item.id}`} 
+                      className="btn"
+                      style={{
+                        background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
+                        color: 'white',
+                        fontWeight: '500',
+                        padding: '0.75rem',
+                        borderRadius: '12px',
+                        boxShadow: '0 4px 15px rgba(255, 77, 77, 0.2)'
+                      }}
+                    >
                       View Details
                     </Link>
                   </div>
@@ -100,7 +104,7 @@ const NewArrivals = () => {
         </div>
         
         <div className="text-center mt-4">
-          <Link to="/new" className="btn btn-outline-dark" style={{
+          <Link to="/product/:id" className="btn btn-outline-dark" style={{
             borderRadius: '25px',
             padding: '0.5rem 1.5rem',
             fontWeight: '500'
