@@ -31,7 +31,6 @@ function HomePage() {
 
 function App() {
   return (
-    // kadir is here
     <Router>
       <Navbar />
       <Routes>
