@@ -43,9 +43,9 @@ const ProductForm = ({ formData, handleChange, handleSubmit, isEditing, resetFor
                             </label>
                             <input
                                 type="text"
-                                name="category"
+                                name="category_slug"
                                 className="form-control"
-                                value={formData.category}
+                                value={formData.category_slug}
                                 onChange={handleChange}
                                 placeholder="Enter product category"
                                 style={{
@@ -88,9 +88,9 @@ const ProductForm = ({ formData, handleChange, handleSubmit, isEditing, resetFor
                             </label>
                             <input
                                 type="number"
-                                name="inventory"
+                                name="qty_in_stock"
                                 className="form-control"
-                                value={formData.inventory}
+                                value={formData.qty_in_stock}
                                 onChange={handleChange}
                                 placeholder="Enter inventory count"
                                 style={{
@@ -106,13 +106,14 @@ const ProductForm = ({ formData, handleChange, handleSubmit, isEditing, resetFor
 
                     <div className="mb-3">
                         <label className="form-label" style={{ fontWeight: '500', fontSize: '0.9rem' }}>
-                            Image URL
+                            Product image
                         </label>
                         <input
-                            type="text"
-                            name="image"
+                            type="file"
+                            name="product_image"
                             className="form-control"
-                            value={formData.image}
+                            accept='image/*'
+                            value={formData.product_image}
                             onChange={handleChange}
                             placeholder="Enter image URL"
                             style={{
