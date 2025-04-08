@@ -13,7 +13,7 @@ class ShopOrder extends Model
     protected $fillable = [
         'user_id', 'order_status_id',
         'order_number', 'tax_amount', 'discount_amount',
-        'total_amount', 'notes', 'ordered_at'
+        'total_amount', 'notes', 'ordered_at', 'amount_before_discount'
     ];
 
     public function user()
@@ -21,9 +21,9 @@ class ShopOrder extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function shippingAddress()
+    public function address()
     {
-        return $this->belongsTo(Address::class, 'shipping_address_id');
+        return $this->belongsTo(Address::class);
     }
 
     public function status()
@@ -44,5 +44,9 @@ class ShopOrder extends Model
     public function payments()
     {
         return $this->hasMany(Payment::class, 'order_id');
+    }
+
+    public function orderStatus(){
+        return $this->belongsTo(orderStatus::class);
     }
 }

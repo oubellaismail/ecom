@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\User;
 use App\Models\Country;
+use App\Models\ShopOrder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -18,12 +19,12 @@ class Address extends Model
         'region',
         'postal_code',
         'country_id',
-        'user_id',
+        'phone_number'
     ];
     
-    public function user()
+    public function orders()
     {
-        return $this->belongsTo(User::class);
+        return $this->hasMany(Order::class);
     }
 
     public function country()

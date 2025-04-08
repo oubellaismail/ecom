@@ -13,11 +13,11 @@ class OrderStatus extends Model
 
     public function orders()
     {
-        return $this->hasMany(ShopOrder::class, 'order_status_id');
+        return $this->hasMany(ShopOrder::class);
     }
 
     public function statusHistories()
     {
-        return $this->hasMany(OrderStatusHistory::class, 'order_status_id');
+        return $this->hasMany(OrderStatusHistory::class);
     }
 }

@@ -61,4 +61,10 @@ class User extends Authenticatable
     {
         return $this->hasOne(Address::class);
     }
+
+    public function discounts()
+    {
+        return $this->belongsToMany(Discount::class)
+                    ->withTimestamps(); // Optional if you want created_at/updated_at
+    }
 }

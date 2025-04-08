@@ -25,4 +25,16 @@ class Discount extends Model
     {
         return $this->is_active && $this->actual_usage < $this->usage_limit;
     }
+
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class)
+                    ->withTimestamps();
+    }
+
+    public function hasUsedDiscount($discountId)
+    {
+        return $this->discounts()->where('discount_id', $discountId)->exists();
+    }
 }

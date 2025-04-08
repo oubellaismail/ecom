@@ -26,8 +26,9 @@ class Product extends Model {
     * Get the product items for the product.
     */
 
-    public function productItem() {
-        return $this->hasMany( ProductItem::class );
+    public function productItem()
+    {
+        return $this->hasOne(ProductItem::class); // ← returns a Collection
     }
 
     protected static function booted()

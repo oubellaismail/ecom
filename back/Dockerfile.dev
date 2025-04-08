@@ -36,7 +36,9 @@ RUN mkdir -p storage bootstrap/cache vendor && \
     chmod -R 775 storage bootstrap/cache vendor && \
     chown -R $user:$user /var/www/html
 
-# Switch to user
+RUN php artisan storage:link
+
+    # Switch to user
 USER $user
 
 # Run composer install
