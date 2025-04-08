@@ -31,6 +31,7 @@ function HomePage() {
 
 function App() {
   return (
+    // comment mizo
     <Router>
       <Navbar />
       <Routes>
