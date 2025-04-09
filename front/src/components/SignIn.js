@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link , useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { loginUser } from '../api/authService';
 import { useAuth } from '../context/AuthContext';
 
@@ -11,7 +11,7 @@ const SignIn = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
-  
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setCredentials({ ...credentials, [name]: value });
@@ -24,10 +24,13 @@ const SignIn = () => {
     setIsLoading(true);
     try {
       const data = await loginUser(credentials);
-      login(data.token); 
+
+      login(data);
+
       setSuccessMessage('Login successful!');
       console.log('Login success:', data);
-      setTimeout(() => navigate('/dashboard'), 1500); 
+
+      setTimeout(() => navigate('/dashboard'), 1500);
     } catch (error) {
       setErrorMessage(error.message || 'Login failed');
       console.error('Login error:', error);
@@ -67,13 +70,13 @@ const SignIn = () => {
                   <label className="form-label" style={{ fontWeight: '500', fontSize: '0.9rem' }}>
                     Email Address
                   </label>
-                  <input 
-                    type="email" 
+                  <input
+                    type="email"
                     className="form-control"
-                    name='email' 
+                    name='email'
                     value={credentials.email}
                     onChange={handleChange}
-                    placeholder="your@email.com" 
+                    placeholder="your@email.com"
                     style={{
                       padding: '12px 16px',
                       borderRadius: '12px',
@@ -83,27 +86,27 @@ const SignIn = () => {
                     required
                   />
                 </div>
-                
+
                 {/* Password field */}
                 <div className="mb-3">
                   <div className="d-flex justify-content-between align-items-center mb-1">
                     <label className="form-label mb-0" style={{ fontWeight: '500', fontSize: '0.9rem' }}>
                       Password
                     </label>
-                    <Link to="/forgot-password" className="text-decoration-none" style={{ 
+                    <Link to="/forgot-password" className="text-decoration-none" style={{
                       fontSize: '0.85rem',
                       color: '#ff4d4d'
                     }}>
                       Forgot password?
                     </Link>
                   </div>
-                  <input 
-                    type="password" 
+                  <input
+                    type="password"
                     className="form-control"
-                    name='password' 
+                    name='password'
                     value={credentials.password}
                     onChange={handleChange}
-                    placeholder="Enter your password" 
+                    placeholder="Enter your password"
                     style={{
                       padding: '12px 16px',
                       borderRadius: '12px',
@@ -113,10 +116,10 @@ const SignIn = () => {
                     required
                   />
                 </div>
-                
+
                 {/* Sign in button */}
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={isLoading}
                   className="btn w-100 mb-3"
                   style={{
@@ -130,14 +133,14 @@ const SignIn = () => {
                 >
                   {isLoading ? 'Signing in...' : 'Sign In'}
                 </button>
-                
+
                 {/* separator */}
                 <div className="d-flex align-items-center my-4">
                   <div className="flex-grow-1 border-bottom"></div>
                 </div>
-                
-               
-                
+
+
+
                 {/* Sign up link */}
                 <div className="text-center" style={{ fontSize: '0.9rem' }}>
                   Don't have an account?{' '}

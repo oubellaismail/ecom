@@ -1,7 +1,20 @@
 import React from 'react';
-import { EditIcon, TrashIcon } from './Icons';
 
-const ProductList = ({ products, handleEdit, handleDelete, handleAddNew, errorMessage, successMessage }) => {
+// Simple icon components
+const EditIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-pencil" viewBox="0 0 16 16">
+        <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
+    </svg>
+);
+
+const TrashIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash" viewBox="0 0 16 16">
+        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z" />
+        <path fillRule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z" />
+    </svg>
+);
+
+const ProductList = ({ products, handleEdit, handleDelete, handleAddNew, errorMessage, successMessage, loading }) => {
     return (
         <div className="card border-0" style={{
             background: 'rgba(255, 255, 255, 0.8)',
@@ -24,6 +37,7 @@ const ProductList = ({ products, handleEdit, handleDelete, handleAddNew, errorMe
                             boxShadow: '0 4px 15px rgba(255, 77, 77, 0.2)',
                             border: 'none'
                         }}
+                        disabled={loading}
                     >
                         Add New Product
                     </button>
@@ -32,43 +46,58 @@ const ProductList = ({ products, handleEdit, handleDelete, handleAddNew, errorMe
                 {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
                 {successMessage && <div className="alert alert-success">{successMessage}</div>}
 
-                <div className="table-responsive">
-                    <table className="table">
-                        <thead>
-                            <tr>
-                                <th scope="col">Image</th>
-                                <th scope="col">Name</th>
-                                <th scope="col">Category</th>
-                                <th scope="col">Price</th>
-                                <th scope="col">Inventory</th>
-                                <th scope="col">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {products.map((product) => (
-                                <ProductRow
-                                    key={product.id}
-                                    product={product}
-                                    handleEdit={handleEdit}
-                                    handleDelete={handleDelete}
-                                />
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                {loading ? (
+                    <div className="text-center py-5">
+                        <div className="spinner-border" role="status">
+                            <span className="visually-hidden">Loading...</span>
+                        </div>
+                        <p className="mt-3">Loading products...</p>
+                    </div>
+                ) : products.length === 0 ? (
+                    <div className="alert alert-info">No products found. Add your first product!</div>
+                ) : (
+                    <div className="table-responsive">
+                        <table className="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Image</th>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Category</th>
+                                    <th scope="col">Price</th>
+                                    <th scope="col">Inventory</th>
+                                    <th scope="col">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {products.map((product) => (
+                                    <ProductRow
+                                        key={product.slug || product.id}
+                                        product={product}
+                                        handleEdit={handleEdit}
+                                        handleDelete={handleDelete}
+                                        loading={loading}
+                                    />
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         </div>
     );
 };
 
 // ProductRow component for individual product row
-const ProductRow = ({ product, handleEdit, handleDelete }) => {
+const ProductRow = ({ product, handleEdit, handleDelete, loading }) => {
+    // Get the identifier (slug or id) to use for actions
+    const productId = product.slug || product.id;
+
     return (
         <tr>
             <td>
                 <div style={{ width: '50px', height: '50px' }}>
                     <img
-                        src={product.image}
+                        src={product.product_image || '/placeholder-image.jpg'}
                         alt={product.name}
                         className="rounded"
                         style={{
@@ -77,28 +106,33 @@ const ProductRow = ({ product, handleEdit, handleDelete }) => {
                             objectFit: 'cover',
                             borderRadius: '8px'
                         }}
+                        onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = '/placeholder-image.jpg';
+                        }}
                     />
                 </div>
             </td>
             <td>{product.name}</td>
-            <td>{product.category}</td>
-            <td>${product.price.toFixed(2)}</td>
-            <td>{product.inventory}</td>
+            <td>{product.category_name || product.category_slug}</td>
+            <td>${parseFloat(product.price).toFixed(2)}</td>
+            <td>{product.qty_in_stock}</td>
             <td>
                 <div className="d-flex gap-2">
                     <button
-                        onClick={() => handleEdit(product)}
+                        onClick={() => handleEdit(productId)}
                         className="btn btn-sm p-2"
                         style={{
                             background: 'rgba(236, 236, 236, 0.7)',
                             borderRadius: '8px',
                             border: 'none'
                         }}
+                        disabled={loading}
                     >
                         <EditIcon />
                     </button>
                     <button
-                        onClick={() => handleDelete(product.id)}
+                        onClick={() => handleDelete(productId)}
                         className="btn btn-sm p-2"
                         style={{
                             background: 'rgba(236, 236, 236, 0.7)',
@@ -106,6 +140,7 @@ const ProductRow = ({ product, handleEdit, handleDelete }) => {
                             borderRadius: '8px',
                             border: 'none'
                         }}
+                        disabled={loading}
                     >
                         <TrashIcon />
                     </button>

@@ -1,6 +1,6 @@
 import React from 'react';
 
-const CategoryForm = ({ categoryData, handleCategoryChange, handleCategorySubmit, isEditingCategory, resetCategoryForm, setActiveTab, errorMessage, successMessage }) => {
+const CategoryForm = ({ categoryData, handleCategoryChange, handleCategorySubmit, isEditingCategory, resetCategoryForm, setActiveTab, errorMessage, successMessage, loading }) => {
     return (
         <div className="card border-0" style={{
             background: 'rgba(255, 255, 255, 0.8)',
@@ -33,7 +33,33 @@ const CategoryForm = ({ categoryData, handleCategoryChange, handleCategorySubmit
                                 border: 'none'
                             }}
                             required
+                            disabled={loading}
                         />
+                    </div>
+
+                    <div className="mb-3">
+                        <label className="form-label" style={{ fontWeight: '500', fontSize: '0.9rem' }}>
+                            Category Slug*
+                        </label>
+                        <input
+                            type="text"
+                            name="slug"
+                            className="form-control"
+                            value={categoryData.slug}
+                            onChange={handleCategoryChange}
+                            placeholder="Enter category slug"
+                            style={{
+                                padding: '12px 16px',
+                                borderRadius: '12px',
+                                background: 'rgba(236, 236, 236, 0.7)',
+                                border: 'none'
+                            }}
+                            required
+                            disabled={isEditingCategory || loading}  // Disable editing slug for existing categories
+                        />
+                        <small className="text-muted">
+                            The "slug" is the URL-friendly version of the name. It is usually all lowercase and contains only letters, numbers, and hyphens.
+                        </small>
                     </div>
 
                     <div className="mb-4">
@@ -53,6 +79,7 @@ const CategoryForm = ({ categoryData, handleCategoryChange, handleCategorySubmit
                                 border: 'none',
                                 minHeight: '120px'
                             }}
+                            disabled={loading}
                         ></textarea>
                     </div>
 
@@ -69,8 +96,16 @@ const CategoryForm = ({ categoryData, handleCategoryChange, handleCategorySubmit
                                 boxShadow: '0 4px 15px rgba(255, 77, 77, 0.2)',
                                 border: 'none'
                             }}
+                            disabled={loading}
                         >
-                            {isEditingCategory ? 'Update Category' : 'Add Category'}
+                            {loading ? (
+                                <>
+                                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                    {isEditingCategory ? 'Updating...' : 'Adding...'}
+                                </>
+                            ) : (
+                                isEditingCategory ? 'Update Category' : 'Add Category'
+                            )}
                         </button>
                         <button
                             type="button"
@@ -87,6 +122,7 @@ const CategoryForm = ({ categoryData, handleCategoryChange, handleCategorySubmit
                                 borderRadius: '12px',
                                 border: 'none'
                             }}
+                            disabled={loading}
                         >
                             Cancel
                         </button>

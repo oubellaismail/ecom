@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Sidebar from './Dashboard/Sidebar';
 import ProductList from './Dashboard/ProductList';
 import ProductForm from './Dashboard/ProductForm';
@@ -8,168 +8,141 @@ import useProductManagement from './Dashboard/useProductManagement';
 import useCategoryManagement from './Dashboard/useCategoryManagement';
 
 const AdminDashboard = () => {
-  // Initial product data
-  const initialProducts = [
-    {
-      id: 1,
-      name: 'Premium Wireless Headphones',
-      description: 'High-quality wireless headphones with noise cancellation',
-      price: 149.99,
-      category: 'Electronics',
-      image: '/images/7.jpg',
-      inventory: 45
-    },
-    {
-      id: 2,
-      name: 'Smart Watch Series 5',
-      description: 'Feature-rich smartwatch with health tracking capabilities',
-      price: 299.99,
-      category: 'Wearables',
-      image: '/images/6.jpg',
-      inventory: 32
-    },
-    {
-      id: 3,
-      name: 'Ultrabook Pro 15',
-      description: 'Powerful laptop with high performance specs',
-      price: 1099.99,
-      category: 'Computers',
-      image: '/images/5.jpg',
-      inventory: 18
-    },
-  ];
+  const [activeTab, setActiveTab] = useState('products');
 
-  // Initial category data
-  const initialCategories = [
-    {
-      id: 1,
-      name: 'Electronics',
-      description: 'Electronic devices and accessories',
-      productCount: 1
-    },
-    {
-      id: 2,
-      name: 'Wearables',
-      description: 'Wearable technology devices',
-      productCount: 1
-    },
-    {
-      id: 3,
-      name: 'Computers',
-      description: 'Laptops, desktops, and computing accessories',
-      productCount: 1
-    }
-  ];
-
-  // Use custom hooks for product and category management
+  // Product management
   const {
     products,
+    categories,
     formData,
     isEditing,
     errorMessage: productErrorMessage,
     successMessage: productSuccessMessage,
-    activeTab,
-    setActiveTab,
+    loading: productLoading,
     handleChange,
     handleSubmit,
     handleEdit,
     handleDelete,
     resetForm,
-    handleAddNew
-  } = useProductManagement(initialProducts);
+    handleAddNew,
+    setActiveTab: setProductActiveTab
+  } = useProductManagement();
 
+  // Category management
   const {
-    categories,
+    categories: categoryList,  // Renamed to avoid conflict
     categoryData,
     isEditingCategory,
     errorMessage: categoryErrorMessage,
     successMessage: categorySuccessMessage,
+    loading: categoryLoading,
     handleCategoryChange,
     handleCategorySubmit,
     handleEditCategory,
     handleDeleteCategory,
     resetCategoryForm,
     handleAddNewCategory
-  } = useCategoryManagement(initialCategories);
+  } = useCategoryManagement();
 
-  // Function to determine which component to render based on activeTab
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'products':
-        return (
-          <ProductList
-            products={products}
-            handleEdit={handleEdit}
-            handleDelete={handleDelete}
-            handleAddNew={handleAddNew}
-            errorMessage={productErrorMessage}
-            successMessage={productSuccessMessage}
-          />
-        );
-      case 'addEdit':
-        return (
-          <ProductForm
-            formData={formData}
-            handleChange={handleChange}
-            handleSubmit={handleSubmit}
-            isEditing={isEditing}
-            resetForm={resetForm}
-            setActiveTab={setActiveTab}
-            errorMessage={productErrorMessage}
-            successMessage={productSuccessMessage}
-          />
-        );
-      case 'categories':
-        return (
-          <CategoryList
-            categories={categories}
-            handleEditCategory={handleEditCategory}
-            handleDeleteCategory={handleDeleteCategory}
-            handleAddNewCategory={() => {
-              handleAddNewCategory();
-              setActiveTab('addEditCategory');
-            }}
-            errorMessage={categoryErrorMessage}
-            successMessage={categorySuccessMessage}
-          />
-        );
-      case 'addEditCategory':
-        return (
-          <CategoryForm
-            categoryData={categoryData}
-            handleCategoryChange={handleCategoryChange}
-            handleCategorySubmit={handleCategorySubmit}
-            isEditingCategory={isEditingCategory}
-            resetCategoryForm={resetCategoryForm}
-            setActiveTab={setActiveTab}
-            errorMessage={categoryErrorMessage}
-            successMessage={categorySuccessMessage}
-          />
-        );
-      default:
-        return <ProductList products={products} handleEdit={handleEdit} handleDelete={handleDelete} />;
+  const handleAddNewProduct = () => {
+    handleAddNew(); // This is the function from useProductManagement
+    setActiveTab('addEdit'); // This updates the local activeTab state in AdminDashboard
+  };
+  // Modified category submit handler to redirect to category list afterwards
+  const handleCategoryFormSubmit = async (e) => {
+    await handleCategorySubmit(e);
+    // Navigate to categories tab after successful submission
+    setActiveTab('categories');
+  };
+
+  // Set active tab for both product and category management
+  const handleSetActiveTab = (tab) => {
+    setActiveTab(tab);
+    if (['products', 'addEdit'].includes(tab)) {
+      setProductActiveTab(tab);
     }
   };
 
   return (
-    <div className="container-fluid py-4" style={{
-      background: 'linear-gradient(135deg, #f8f9fa, #e9ecef)',
-      minHeight: '100vh'
-    }}>
+    <div className="container-fluid">
       <div className="row">
-        <div className="col-md-3 mb-4">
+        {/* Sidebar */}
+        <div className="col-md-3 col-lg-2 p-3" style={{ maxHeight: '100vh', overflowY: 'auto' }}>
           <Sidebar
             activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            handleAddNew={handleAddNew}
+            setActiveTab={handleSetActiveTab}
+            handleAddNew={handleAddNewProduct} // Use the new wrapper function
             handleAddNewCategory={handleAddNewCategory}
             isEditing={isEditing}
             isEditingCategory={isEditingCategory}
           />
         </div>
 
-        <div className="col-md-9">
-          {renderContent()}
+        {/* Main Content */}
+        <div className="col-md-9 col-lg-10 p-3" style={{ maxHeight: '100vh', overflowY: 'auto' }}>
+          <div className="row mb-4">
+            <div className="col">
+              <h1 className="display-5 fw-bold">Admin Dashboard</h1>
+              <p className="text-muted">Manage your products and categories</p>
+            </div>
+          </div>
+
+          {/* Product List */}
+          {activeTab === 'products' && (
+            <ProductList
+              products={products}
+              handleEdit={handleEdit}
+              handleDelete={handleDelete}
+              handleAddNew={handleAddNew}
+              errorMessage={productErrorMessage}
+              successMessage={productSuccessMessage}
+              loading={productLoading}
+            />
+          )}
+
+          {/* Product Form */}
+          {activeTab === 'addEdit' && (
+            <ProductForm
+              formData={formData}
+              handleChange={handleChange}
+              handleSubmit={handleSubmit}
+              isEditing={isEditing}
+              resetForm={resetForm}
+              setActiveTab={handleSetActiveTab}
+              errorMessage={productErrorMessage}
+              successMessage={productSuccessMessage}
+              loading={productLoading}
+              categories={categories}  // Pass categories to the form
+            />
+          )}
+
+          {/* Category List */}
+          {activeTab === 'categories' && (
+            <CategoryList
+              categories={categoryList}
+              handleEditCategory={handleEditCategory}
+              handleDeleteCategory={handleDeleteCategory}
+              handleAddNewCategory={() => handleSetActiveTab('addEditCategory')}
+              errorMessage={categoryErrorMessage}
+              successMessage={categorySuccessMessage}
+              loading={categoryLoading}
+            />
+          )}
+
+          {/* Category Form */}
+          {activeTab === 'addEditCategory' && (
+            <CategoryForm
+              categoryData={categoryData}
+              handleCategoryChange={handleCategoryChange}
+              handleCategorySubmit={handleCategoryFormSubmit}
+              isEditingCategory={isEditingCategory}
+              resetCategoryForm={resetCategoryForm}
+              setActiveTab={handleSetActiveTab}
+              errorMessage={categoryErrorMessage}
+              successMessage={categorySuccessMessage}
+              loading={categoryLoading}
+            />
+          )}
         </div>
       </div>
     </div>

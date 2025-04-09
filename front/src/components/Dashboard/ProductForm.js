@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ProductForm = ({ formData, handleChange, handleSubmit, isEditing, resetForm, setActiveTab, errorMessage, successMessage }) => {
+const ProductForm = ({ formData, handleChange, handleSubmit, isEditing, resetForm, setActiveTab, errorMessage, successMessage, loading, categories }) => {
     return (
         <div className="card border-0" style={{
             background: 'rgba(255, 255, 255, 0.8)',
@@ -34,27 +34,35 @@ const ProductForm = ({ formData, handleChange, handleSubmit, isEditing, resetFor
                                     border: 'none'
                                 }}
                                 required
+                                disabled={loading}
                             />
                         </div>
 
                         <div className="col-md-6 mb-3">
                             <label className="form-label" style={{ fontWeight: '500', fontSize: '0.9rem' }}>
-                                Category
+                                Category*
                             </label>
-                            <input
-                                type="text"
+                            <select
                                 name="category_slug"
-                                className="form-control"
+                                className="form-select"
                                 value={formData.category_slug}
                                 onChange={handleChange}
-                                placeholder="Enter product category"
                                 style={{
                                     padding: '12px 16px',
                                     borderRadius: '12px',
                                     background: 'rgba(236, 236, 236, 0.7)',
                                     border: 'none'
                                 }}
-                            />
+                                required
+                                disabled={loading}
+                            >
+                                <option value="">Select a category</option>
+                                {categories && categories.map(category => (
+                                    <option key={category.slug} value={category.slug}>
+                                        {category.name}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                     </div>
 
@@ -79,6 +87,7 @@ const ProductForm = ({ formData, handleChange, handleSubmit, isEditing, resetFor
                                 required
                                 step="0.01"
                                 min="0"
+                                disabled={loading}
                             />
                         </div>
 
@@ -100,6 +109,7 @@ const ProductForm = ({ formData, handleChange, handleSubmit, isEditing, resetFor
                                     border: 'none'
                                 }}
                                 min="0"
+                                disabled={loading}
                             />
                         </div>
                     </div>
@@ -112,8 +122,7 @@ const ProductForm = ({ formData, handleChange, handleSubmit, isEditing, resetFor
                             type="file"
                             name="product_image"
                             className="form-control"
-                            accept='image/*'
-                            value={formData.product_image}
+                            accept="image/*"
                             onChange={handleChange}
                             placeholder="Enter image URL"
                             style={{
@@ -122,7 +131,26 @@ const ProductForm = ({ formData, handleChange, handleSubmit, isEditing, resetFor
                                 background: 'rgba(236, 236, 236, 0.7)',
                                 border: 'none'
                             }}
+                            disabled={loading}
                         />
+                        {isEditing && typeof formData.product_image === 'string' && formData.product_image && (
+                            <div className="mt-2">
+                                <div className="d-flex align-items-center">
+                                    <img
+                                        src={formData.product_image}
+                                        alt="Current product"
+                                        className="me-2"
+                                        style={{
+                                            width: '50px',
+                                            height: '50px',
+                                            objectFit: 'cover',
+                                            borderRadius: '8px'
+                                        }}
+                                    />
+                                    <p className="text-muted small mb-0">Current image</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="mb-4">
@@ -143,6 +171,7 @@ const ProductForm = ({ formData, handleChange, handleSubmit, isEditing, resetFor
                                 minHeight: '120px'
                             }}
                             required
+                            disabled={loading}
                         ></textarea>
                     </div>
 
@@ -150,6 +179,7 @@ const ProductForm = ({ formData, handleChange, handleSubmit, isEditing, resetFor
                         isEditing={isEditing}
                         resetForm={resetForm}
                         setActiveTab={setActiveTab}
+                        loading={loading}
                     />
                 </form>
             </div>
@@ -158,7 +188,7 @@ const ProductForm = ({ formData, handleChange, handleSubmit, isEditing, resetFor
 };
 
 // FormActions component for form buttons
-const FormActions = ({ isEditing, resetForm, setActiveTab }) => {
+const FormActions = ({ isEditing, resetForm, setActiveTab, loading }) => {
     return (
         <div className="d-flex gap-3">
             <button
@@ -173,8 +203,16 @@ const FormActions = ({ isEditing, resetForm, setActiveTab }) => {
                     boxShadow: '0 4px 15px rgba(255, 77, 77, 0.2)',
                     border: 'none'
                 }}
+                disabled={loading}
             >
-                {isEditing ? 'Update Product' : 'Add Product'}
+                {loading ? (
+                    <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        {isEditing ? 'Updating...' : 'Adding...'}
+                    </>
+                ) : (
+                    isEditing ? 'Update Product' : 'Add Product'
+                )}
             </button>
             <button
                 type="button"
@@ -191,6 +229,7 @@ const FormActions = ({ isEditing, resetForm, setActiveTab }) => {
                     borderRadius: '12px',
                     border: 'none'
                 }}
+                disabled={loading}
             >
                 Cancel
             </button>

@@ -33,18 +33,29 @@ export const resetPassword = async (token, newPassword) => {
   }
 };
 
+// Login user
 export const loginUser = async (credentials) => {
   try {
     const response = await axiosInstance.post('/login', credentials);
 
-    // Store token in localStorage if your API returns one
+    // Store the authToken for backward compatibility with your existing code
     if (response.data.token) {
       localStorage.setItem('authToken', response.data.token);
     }
 
+    // Store the access_token for the new authorization header system
+    if (response.data.access_token) {
+      localStorage.setItem('access_token', response.data.access_token);
+    }
+
+    // Return the full response data with tokens and user info
     return response.data;
   } catch (error) {
-    throw error.response ? error.response.data : { message: 'Network Error' };
+    if (error.response && error.response.data && error.response.data.message) {
+      throw new Error(error.response.data.message);
+    } else {
+      throw new Error('Login failed. Please try again.');
+    }
   }
 };
 
