@@ -55,7 +55,17 @@ Route::prefix('api/paypal')->group(function () {
     Route::get('check-status', [PaypalController::class, 'checkPaymentStatus']);
 });
 
-Route::prefix('payments/paypal')->group(function () {
-    Route::get('success', [OrderController::class, 'handlePayPalCallback'])->name('paypal.success');
-    Route::get('cancel', [OrderController::class, 'handlePayPalCancel'])->name('paypal.cancel');
+Route::prefix('payments')->group(function () {
+    Route::get('success', [OrderController::class, 'handlePaymentCallback'])->name('payment.success');
+    Route::get('cancel', [OrderController::class, 'handlePayPalCancel'])->name('payment.cancel');
+
+    Route::get('stripe/success', [OrderController::class, 'handlePaymentCallback'])->name('stripe.success');
+    Route::get('stripe/cancel', function() {
+        return redirect()->to('/payment/failed'); // Redirect to your frontend cancel page
+    })->name('stripe.cancel');
+
+    // COD specific processing
+    Route::post('/payment/cod/process', [OrderController::class, 'processCODOrder']);
 });
+
+
