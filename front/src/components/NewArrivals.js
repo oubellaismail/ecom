@@ -104,7 +104,7 @@ const NewArrivals = () => {
         </div>
         
         <div className="text-center mt-4">
-          <Link to="/product/:id" className="btn btn-outline-dark" style={{
+          <Link to="//product/:id" className="btn btn-outline-dark" style={{
             borderRadius: '25px',
             padding: '0.5rem 1.5rem',
             fontWeight: '500'
