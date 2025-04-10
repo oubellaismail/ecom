@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Discount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str; 
+use Illuminate\Support\Facades\DB;
 use App\Http\Requests\Discounts\StoreDiscountRequest;
 
 class DiscountController extends Controller
@@ -34,6 +35,10 @@ class DiscountController extends Controller
                 'message' => "Discount not found or invalid"
             ], 404);
         }
+
+        if ($user->hasUsedDiscount($discount->id)) {
+            return response()->json(['error' => 'You have already used this discount.'], 400);
+        }   
 
         // Return discount data
         return response()->json([

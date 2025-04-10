@@ -13,7 +13,7 @@ class CountryController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $countries->only('name', 'code'),
+            'data' => $countries->pluck('name', 'code'),
             'message' => "Countries retrieved successfully"
         ]);
     }

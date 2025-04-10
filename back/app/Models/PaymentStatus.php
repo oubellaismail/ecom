@@ -3,14 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class PaymentMethod extends Model
+class PaymentStatus extends Model
 {
-    use HasFactory, SoftDeletes;
 
-    protected $fillable = ['name', 'code', 'is_active'];
+    use HasFactory;
+
+    const NOT_PAID = 1;
+    const PAID = 2;
+
+    protected $fillable = ['status', 'description'];
 
     public function payments()
     {

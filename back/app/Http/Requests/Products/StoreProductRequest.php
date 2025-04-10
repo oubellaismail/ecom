@@ -25,10 +25,11 @@ class StoreProductRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'category_id' => 'required|exists:categories,id',
+            'category_slug' => 'required|exists:categories,slug',
             'qty_in_stock' => 'required|integer|min:0',  // Ensuring qty_in_stock is a non-negative integer
             'product_image' => 'nullable|string',  // Allow null or a string value for image
             'price' => 'required|numeric|min:0',  // Ensuring price is a numeric value and not negative
+            'product_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ];
     }
     

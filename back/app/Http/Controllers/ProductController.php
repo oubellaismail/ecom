@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\Category;
 use App\Models\ProductItem;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
@@ -50,7 +51,7 @@ class ProductController extends Controller
         $products = $query->select(['id', 'name', 'slug', 'description', 'category_id'])
         ->with([
             'category:id,name,slug', 
-            'productItem:id,product_id,price,qty_in_stock'
+            'productItem:id,product_id,price,qty_in_stock,product_image'
         ])
         ->get();
 
@@ -66,6 +67,9 @@ class ProductController extends Controller
                 'product_item' => $product->productItem ? [
                     'price' => $product->productItem->price,
                     'qty_in_stock' => $product->productItem->qty_in_stock,
+                    'product_image' => $product->productItem->product_image 
+                        ? asset('storage/' . $product->productItem->product_image)
+                        : null,
                 ] : null,
             ];
         });
@@ -99,18 +103,33 @@ class ProductController extends Controller
         DB::beginTransaction();
 
         try {
+
+            $imagePath = null;
+            if ($request->hasFile('product_image') && $request->file('product_image')->isValid()) {
+                $image = $request->file('product_image');
+
+                // Generate a unique filename
+                $filename = Str::slug(pathinfo($request->name, PATHINFO_FILENAME)) . '-' . uniqid() . '.' . $image->getClientOriginalExtension();
+
+                // Store the image in the 'public/products' directory
+                $imagePath = $image->storeAs('products', $filename, 'public');
+            }
+
+            $category_id = Category::where('slug', $request->category_slug)->firstOrFail()->id;
+
             // Step 1: Create the product
             $product = Product::create([
                 'name' => $request->name,
                 'description' => $request->description,
-                'category_id' => $request->category_id,
+                // 'category_id' => Category::where('slug', $request->category_slug)->firstOrFail()->id(),
+                'category_id' => $category_id,
                 'slug' => $slug,
             ]);
 
             $productItem = ProductItem::create([
                 'product_id' => $product->id,  // Associate product item with the created product
                 'qty_in_stock' => $request->qty_in_stock,
-                'product_image' => $request->product_image, // Nullable if not provided
+                'product_image' => $imagePath, // Nullable if not provided
                 'price' => $request->price,
             ]);
 
@@ -162,7 +181,10 @@ class ProductController extends Controller
                 ],
                 'product_item' => $product->productItem ? [
                     'qty_in_stock' => $product->productItem->qty_in_stock,
-                    'price' => $product->productItem->price
+                    'price' => $product->productItem->price,
+                    'product_image' => $product->productItem->product_image 
+                        ? asset('storage/' . $product->productItem->product_image)
+                        : null,
                 ] : null
             ],
             'message' => 'Product retrieved successfully'
