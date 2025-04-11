@@ -252,8 +252,8 @@ class OrderController extends Controller
     public function handlePaymentCallback(Request $request)
     {
 
-        Log::info('Check:', [
-            'paymentResponse' => "Im here in handle payment callback"
+        Log::info('Im here  cod payment :', [
+            'code' => 'code1'
         ]);
 
         try {
@@ -267,6 +267,10 @@ class OrderController extends Controller
                     'message' => 'No payment identifier provided'
                 ], 400);
             }
+
+            Log::info('Im here  cod payment :', [
+                'code' => 'code2'
+            ]);
             
             // Find the payment by provider_payment_id
             $payment = Payment::where('provider_payment_id', $paymentId)->first();
@@ -279,8 +283,8 @@ class OrderController extends Controller
                 ], 404);
             }
 
-            Log::info('Check payment  :', [
-                'payment' => $payment
+            Log::info('Im here  cod payment :', [
+                'code' => 'code3'
             ]);
             
             // Get checkout details from payment
@@ -330,16 +334,26 @@ class OrderController extends Controller
             
             // Get or create shipping address
             $address = $this->getOrCreateAddress($checkoutData['shipping_address']);
+
+            Log::info('Im here  cod payment :', [
+                'code' => 'code'
+            ]);
             
             // Create order in transaction
             return DB::transaction(function () use ($checkoutData, $payment, $captureData, $paymentDetails, $address) {
                 $userId = auth()->id() ?? 1; // Default to 1 for guest or testing
                 
+                Log::info('Im here  cod payment :', [
+                    'checkdata' => $checkoutData
+                ]);
+
                 // Create the order
                 $order = ShopOrder::create([
                     'user_id' => $userId,
                     'order_number' => uniqid('ORD-'),
+                    'order_status_id' => OrderStatus::PENDING,
                     'amount_before_discount' => $checkoutData['amount_before_discount'],
+                    'discount_id' => $checkoutData['discount_id'],
                     'discount_amount' => $checkoutData['discount_amount'],
                     'total_amount' => $checkoutData['total_amount'],
                     'address_id' => $address->id,
@@ -364,7 +378,6 @@ class OrderController extends Controller
                 // Create order status history
                 OrderStatusHistory::create([
                     'order_id' => $order->id,
-                    'order_status_id' => OrderStatus::PENDING,
                     'changed_at' => now(),
                     'comment' => 'Order created with payment completed'
                 ]);
@@ -372,7 +385,7 @@ class OrderController extends Controller
                 // Update payment with order ID and transaction details
                 $payment->update([
                     'order_id' => $order->id,
-                    'payments_status_id' => PaymentStatus::PAID,
+                    'payments_status_id' => $payment->payment_method_id ==PaymentMethod::COD ? PaymentStatus::NOT_PAID : PaymentStatus::PAID,
                     'transaction_id' => $captureData['transaction_id'],
                     'paid_at' => now(),
                     'details' => json_encode([
@@ -380,11 +393,11 @@ class OrderController extends Controller
                         'payment_details' => $captureData['details']
                     ])
                 ]);
+
                 
                 return response()->json([
                     'success' => true,
                     'data' => [
-                        'order_id' => $order->id,
                         'order_number' => $order->order_number
                     ],
                     'message' => 'Payment completed and order created successfully'
@@ -477,22 +490,42 @@ class OrderController extends Controller
     /**
      * Update order status (admin only)
      */
-    public function updateStatus(Request $request, ShopOrder $order)
+    public function updateStatus(Request $request)
     {
         $validated = $request->validate([
-            'order_status_id' => 'required|exists:order_statuses,id',
-            'comment' => 'nullable|string'
+            'order_status_code' => 'required|exists:order_statuses,code',
+            'order_number' => 'required|exists:shop_orders,order_number',
         ]);
 
-        $order->update(['order_status_id' => $validated['order_status_id']]);
+        $order_status_code = $validated['order_status_code'];
+        $order_number = $validated['order_number'];
+
+        $order_status_id = OrderStatus::where('code', $order_status_code)->first()->id;
+
+        // Eager load the `orderStatus` relationship properly
+        $order = ShopOrder::with(['user', 'orderStatus', 'order_lines'])
+            ->where('order_number', $order_number)
+            ->firstOrFail();
+
+        $order->update(['order_status_id' => $order_status_id]);
 
         OrderStatusHistory::create([
             'order_id' => $order->id,
-            'order_status_id' => $validated['order_status_id'],
             'changed_at' => now(),
-            'comment' => $validated['comment'] ?? null
+            'comment' => "Updated the order status into $order_status_code.",
         ]);
 
-        return response()->json(['message' => 'Order status updated', 'order' => $order]);
+        // Reload the order with its updated relationship
+        $order->load('orderStatus');
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                ''
+            ],
+            'message' => 'Order status updated', 
+        ]);
     }
+
+
 }

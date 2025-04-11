@@ -42,7 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('payments/initiate', [OrderController::class, 'initiatePayment']);
     
     // Order management (for existing orders)
-    Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus']);
+    Route::patch('orders/status', [OrderController::class, 'updateStatus']);
 
     Route::apiResource('statuses', StatusController::class);
 });
@@ -65,7 +65,7 @@ Route::prefix('payments')->group(function () {
     })->name('stripe.cancel');
 
     // COD specific processing
-    Route::post('/payment/cod/process', [OrderController::class, 'processCODOrder']);
+    Route::post('cod/process', [OrderController::class, 'processCODOrder']);
 });
 
 
