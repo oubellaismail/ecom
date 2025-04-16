@@ -3,7 +3,7 @@ import discountService from '../api/discountService';
 
 const DiscountForm = () => {
     const [formData, setFormData] = useState({
-        percentage: '',
+        discount_percentage: '',
         usage_limit: ''
     });
     const [loading, setLoading] = useState(false);
@@ -26,8 +26,8 @@ const DiscountForm = () => {
 
         try {
             // Validate percentage (should be between 0 and 100)
-            const percentage = parseFloat(formData.percentage);
-            if (isNaN(percentage) || percentage < 0 || percentage > 100) {
+            const discount_percentage = parseFloat(formData.discount_percentage);
+            if (isNaN(discount_percentage) || discount_percentage < 0 || discount_percentage > 100) {
                 throw new Error('Percentage must be between 0 and 100');
             }
 
@@ -37,16 +37,19 @@ const DiscountForm = () => {
                 throw new Error('Usage limit must be a positive number');
             }
 
-            // Send only percentage and usage_limit to the backend
-            const response = await discountService.createDiscount({
-                percentage,
+            // Send only discount_percentage and usage_limit to the backend
+            const requestData = {
+                discount_percentage: discount_percentage,
                 usage_limit: usageLimit
-            });
+            };
+            console.log('Sending data:', requestData);
+            const response = await discountService.createDiscount(requestData);
+            console.log('Response:', response);
 
             if (response.success) {
                 setSuccess('Discount created successfully!');
                 setFormData({
-                    percentage: '',
+                    discount_percentage: '',
                     usage_limit: ''
                 });
             } else {
@@ -94,8 +97,8 @@ const DiscountForm = () => {
                                         <input
                                             type="number"
                                             className="form-control"
-                                            name="percentage"
-                                            value={formData.percentage}
+                                            name="discount_percentage"
+                                            value={formData.discount_percentage}
                                             onChange={handleChange}
                                             placeholder="Enter percentage"
                                             min="0"

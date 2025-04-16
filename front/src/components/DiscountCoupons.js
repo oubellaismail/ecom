@@ -6,7 +6,7 @@ const DiscountCoupons = () => {
     const { user } = useAuth();
     const [coupons, setCoupons] = useState([]);
     const [newCoupon, setNewCoupon] = useState({
-        percentage: '',
+        discount_percentage: '',
         usage_limit: ''
     });
 
@@ -50,8 +50,8 @@ const DiscountCoupons = () => {
 
         try {
             // Validate percentage (should be between 0 and 100)
-            const percentage = parseFloat(newCoupon.percentage);
-            if (isNaN(percentage) || percentage < 0 || percentage > 100) {
+            const discount_percentage = parseFloat(newCoupon.discount_percentage);
+            if (isNaN(discount_percentage) || discount_percentage < 0 || discount_percentage > 100) {
                 throw new Error('Percentage must be between 0 and 100');
             }
 
@@ -62,14 +62,14 @@ const DiscountCoupons = () => {
             }
 
             const response = await discountService.createDiscount({
-                percentage,
+                discount_percentage,
                 usage_limit: usageLimit
             });
 
             if (response.success) {
                 setSuccess('Discount created successfully!');
                 setNewCoupon({
-                    percentage: '',
+                    discount_percentage: '',
                     usage_limit: ''
                 });
                 // Refresh the coupons list
@@ -141,8 +141,8 @@ const DiscountCoupons = () => {
                                                     <input
                                                         type="number"
                                                         className="form-control"
-                                                        name="percentage"
-                                                        value={newCoupon.percentage}
+                                                        name="discount_percentage"
+                                                        value={newCoupon.discount_percentage}
                                                         onChange={handleChange}
                                                         placeholder="Enter percentage"
                                                         min="0"
@@ -231,7 +231,7 @@ const DiscountCoupons = () => {
                                             {coupons.map((coupon) => (
                                                 <tr key={coupon.id}>
                                                     <td>{coupon.code}</td>
-                                                    <td>{coupon.percentage}%</td>
+                                                    <td>{coupon.discount_percentage}%</td>
                                                     <td>{coupon.usage_limit}</td>
                                                     <td>{coupon.used_count || 0}</td>
                                                     <td>
