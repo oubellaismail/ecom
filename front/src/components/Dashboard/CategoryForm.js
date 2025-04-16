@@ -37,32 +37,32 @@ const CategoryForm = ({ categoryData, handleCategoryChange, handleCategorySubmit
                         />
                     </div>
 
-                    <div className="mb-3">
-                        <label className="form-label" style={{ fontWeight: '500', fontSize: '0.9rem' }}>
-                            Category Slug*
-                        </label>
-                        <input
-                            type="text"
-                            name="slug"
-                            className="form-control"
-                            value={categoryData.slug}
-                            onChange={handleCategoryChange}
-                            placeholder="Enter category slug"
-                            style={{
-                                padding: '12px 16px',
-                                borderRadius: '12px',
-                                background: 'rgba(236, 236, 236, 0.7)',
-                                border: 'none'
-                            }}
-                            required
-                            disabled={isEditingCategory || loading}  // Disable editing slug for existing categories
-                        />
-                        <small className="text-muted">
-                            The "slug" is the URL-friendly version of the name. It is usually all lowercase and contains only letters, numbers, and hyphens.
-                        </small>
-                    </div>
+                    {isEditingCategory && (
+                        <div className="mb-3">
+                            <label className="form-label" style={{ fontWeight: '500', fontSize: '0.9rem' }}>
+                                Category Slug
+                            </label>
+                            <input
+                                type="text"
+                                name="slug"
+                                className="form-control"
+                                value={categoryData.slug || ''}
+                                readOnly
+                                style={{
+                                    padding: '12px 16px',
+                                    borderRadius: '12px',
+                                    background: 'rgba(236, 236, 236, 0.7)',
+                                    border: 'none',
+                                    cursor: 'not-allowed'
+                                }}
+                            />
+                            <small className="text-muted">
+                                The slug is automatically generated from the category name.
+                            </small>
+                        </div>
+                    )}
 
-                    <div className="mb-4">
+                    <div className="mb-3">
                         <label className="form-label" style={{ fontWeight: '500', fontSize: '0.9rem' }}>
                             Description
                         </label>

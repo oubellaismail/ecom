@@ -1,30 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
+import useDashboardData from './Dashboard/useDashboardData';
 
 const Dashboard = () => {
-  // Sample statistics data
-  const [stats] = useState({
-    totalSales: 15420.75,
-    totalOrders: 182,
-    totalProducts: 127,
-    totalCustomers: 345,
-    pendingOrders: 27,
-    lowStockItems: 18,
-    recentSales: [
-      { id: 1, customer: 'John Doe', date: '2025-04-02', amount: 299.99, status: 'Delivered' },
-      { id: 2, customer: 'Sarah Williams', date: '2025-04-03', amount: 149.99, status: 'Processing' },
-      { id: 3, customer: 'Robert Chen', date: '2025-04-04', amount: 524.98, status: 'Shipped' },
-      { id: 4, customer: 'Emily Johnson', date: '2025-04-05', amount: 1099.99, status: 'Processing' },
-    ],
-    salesData: [
-      { month: 'Jan', sales: 8200 },
-      { month: 'Feb', sales: 7800 },
-      { month: 'Mar', sales: 9500 },
-      { month: 'Apr', sales: 10200 },
-      { month: 'May', sales: 9800 },
-      { month: 'Jun', sales: 12400 },
-    ]
-  });
+  const { dashboardData, loading, error } = useDashboardData();
 
   // Status Badge component
   const StatusBadge = ({ status }) => {
@@ -56,7 +35,8 @@ const Dashboard = () => {
 
   // Chart bars component
   const ChartBars = ({ data }) => {
-    const max = Math.max(...data.map(item => item.sales));
+    const max = Math.max(...data.map(item => item.total));
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
 
     return (
       <div className="d-flex align-items-end justify-content-between mt-3" style={{ height: '150px' }}>
@@ -64,13 +44,13 @@ const Dashboard = () => {
           <div key={index} className="d-flex flex-column align-items-center" style={{ width: `${100 / data.length}%` }}>
             <div
               style={{
-                height: `${(item.sales / max) * 100}%`,
+                height: `${(item.total / max) * 100}%`,
                 width: '80%',
                 borderRadius: '6px 6px 0 0',
                 background: 'linear-gradient(180deg, #ff4d4d, #f9cb28)'
               }}
             ></div>
-            <div className="text-muted mt-2" style={{ fontSize: '0.8rem' }}>{item.month}</div>
+            <div className="text-muted mt-2" style={{ fontSize: '0.8rem' }}>{months[index]}</div>
           </div>
         ))}
       </div>
@@ -116,6 +96,29 @@ const Dashboard = () => {
       <line x1="7" y1="7" x2="7.01" y2="7"></line>
     </svg>
   );
+
+  if (loading) {
+    return (
+      <div className="container-fluid py-4">
+        <div className="text-center py-5">
+          <div className="spinner-border" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mt-3">Loading dashboard data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container-fluid py-4">
+        <div className="alert alert-danger">
+          {error}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container-fluid py-4" style={{
@@ -186,8 +189,6 @@ const Dashboard = () => {
                 >
                   Orders
                 </Link>
-
-
                 <Link
                   to="/discount"
                   className="nav-link text-start py-3 px-4"
@@ -226,7 +227,7 @@ const Dashboard = () => {
                     </div>
                     <div>
                       <h6 className="text-muted mb-1">Total Sales</h6>
-                      <h3 className="fw-bold mb-0">${stats.totalSales.toLocaleString()}</h3>
+                      <h3 className="fw-bold mb-0">${dashboardData.totalSales.toLocaleString()}</h3>
                     </div>
                   </div>
                 </div>
@@ -250,7 +251,7 @@ const Dashboard = () => {
                     </div>
                     <div>
                       <h6 className="text-muted mb-1">Total Orders</h6>
-                      <h3 className="fw-bold mb-0">{stats.totalOrders}</h3>
+                      <h3 className="fw-bold mb-0">{dashboardData.totalOrders}</h3>
                     </div>
                   </div>
                 </div>
@@ -274,7 +275,7 @@ const Dashboard = () => {
                     </div>
                     <div>
                       <h6 className="text-muted mb-1">Products</h6>
-                      <h3 className="fw-bold mb-0">{stats.totalProducts}</h3>
+                      <h3 className="fw-bold mb-0">{dashboardData.totalProducts}</h3>
                     </div>
                   </div>
                 </div>
@@ -298,7 +299,7 @@ const Dashboard = () => {
                     </div>
                     <div>
                       <h6 className="text-muted mb-1">Customers</h6>
-                      <h3 className="fw-bold mb-0">{stats.totalCustomers}</h3>
+                      <h3 className="fw-bold mb-0">{dashboardData.totalCustomers}</h3>
                     </div>
                   </div>
                 </div>
@@ -317,19 +318,19 @@ const Dashboard = () => {
               }}>
                 <div className="card-body p-4">
                   <h5 className="fw-bold mb-4">Sales Overview</h5>
-                  <ChartBars data={stats.salesData} />
+                  <ChartBars data={dashboardData.salesOverview} />
 
                   <div className="d-flex justify-content-between mt-4">
                     <div>
                       <h6 className="text-muted mb-1">Monthly Average</h6>
                       <h4 className="fw-bold mb-0">
-                        ${(stats.salesData.reduce((acc, item) => acc + item.sales, 0) / stats.salesData.length).toLocaleString()}
+                        ${dashboardData.monthlyAverageRevenue.toLocaleString()}
                       </h4>
                     </div>
                     <div>
                       <h6 className="text-muted mb-1">Total Revenue</h6>
                       <h4 className="fw-bold mb-0">
-                        ${stats.salesData.reduce((acc, item) => acc + item.sales, 0).toLocaleString()}
+                        ${dashboardData.totalRevenueLast6Months.toLocaleString()}
                       </h4>
                     </div>
                   </div>
@@ -357,7 +358,7 @@ const Dashboard = () => {
                     </div>
                     <div>
                       <h6 className="fw-bold mb-1">Pending Orders</h6>
-                      <p className="mb-0" style={{ fontSize: '0.9rem' }}>{stats.pendingOrders} orders need processing</p>
+                      <p className="mb-0" style={{ fontSize: '0.9rem' }}>{dashboardData.pendingOrders} orders need processing</p>
                     </div>
                   </div>
 
@@ -370,7 +371,7 @@ const Dashboard = () => {
                     </div>
                     <div>
                       <h6 className="fw-bold mb-1">Low Stock Alert</h6>
-                      <p className="mb-0" style={{ fontSize: '0.9rem' }}>{stats.lowStockItems} products are low in stock</p>
+                      <p className="mb-0" style={{ fontSize: '0.9rem' }}>{dashboardData.lowStockItems} products are low in stock</p>
                     </div>
                   </div>
 
@@ -427,20 +428,18 @@ const Dashboard = () => {
                     <tr>
                       <th scope="col">Order ID</th>
                       <th scope="col">Customer</th>
-                      <th scope="col">Date</th>
                       <th scope="col">Amount</th>
                       <th scope="col">Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {stats.recentSales.map((order) => (
-                      <tr key={order.id}>
-                        <td>#{order.id + 1000}</td>
-                        <td>{order.customer}</td>
-                        <td>{order.date}</td>
-                        <td>${order.amount.toFixed(2)}</td>
+                    {dashboardData.recentOrders.map((order, index) => (
+                      <tr key={index}>
+                        <td>#{order.order_number}</td>
+                        <td>{order.user_full_name}</td>
+                        <td>${order.total_amount.toFixed(2)}</td>
                         <td>
-                          <StatusBadge status={order.status} />
+                          <StatusBadge status={order.order_status} />
                         </td>
                       </tr>
                     ))}

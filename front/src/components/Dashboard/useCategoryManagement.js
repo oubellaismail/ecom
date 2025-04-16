@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import categoryApi from '../../api/categoryService';
+import statusApi from '../../api/statusService';
 
 const useCategoryManagement = () => {
     const [categories, setCategories] = useState([]);
@@ -33,17 +34,8 @@ const useCategoryManagement = () => {
     const loadCategories = async () => {
         setLoading(true);
         try {
-            const response = await categoryApi.getAllCategories();
-
-            // Check if response.data is an array or wrap a single item in an array
-            let categoriesArray = [];
-            if (Array.isArray(response.data)) {
-                categoriesArray = response.data;
-            } else if (response.data && typeof response.data === 'object') {
-                categoriesArray = [response.data];
-            }
-
-            setCategories(categoriesArray);
+            const response = await statusApi.getStatuses();
+            setCategories(response.data.categories || []);
         } catch (error) {
             console.error("API Error:", error);
             setErrorMessage('Failed to load categories: ' + (error.message || 'Unknown error'));
@@ -56,18 +48,6 @@ const useCategoryManagement = () => {
     const handleCategoryChange = (e) => {
         const { name, value } = e.target;
         setCategoryData({ ...categoryData, [name]: value });
-
-        // Auto-generate slug from name if this is a new category
-        if (name === 'name' && !isEditingCategory) {
-            const slug = value.toLowerCase()
-                .replace(/\s+/g, '-')           // Replace spaces with -
-                .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
-                .replace(/\-\-+/g, '-')         // Replace multiple - with single -
-                .replace(/^-+/, '')             // Trim - from start of text
-                .replace(/-+$/, '');            // Trim - from end of text
-
-            setCategoryData(prev => ({ ...prev, slug }));
-        }
     };
 
     // Handle form submission
@@ -78,7 +58,7 @@ const useCategoryManagement = () => {
 
         try {
             if (isEditingCategory) {
-                await categoryApi.updateCategory(categoryData.slug, categoryData);
+                await categoryApi.updateCategory(categoryData.id, categoryData);
                 setSuccessMessage('Category updated successfully!');
             } else {
                 await categoryApi.createCategory(categoryData);
@@ -96,10 +76,10 @@ const useCategoryManagement = () => {
     };
 
     // Handle edit button click
-    const handleEditCategory = async (slug) => {
+    const handleEditCategory = async (id) => {
         setLoading(true);
         try {
-            const response = await categoryApi.getCategory(slug);
+            const response = await categoryApi.getCategory(id);
             const category = response.data;
 
             if (category) {
@@ -116,11 +96,11 @@ const useCategoryManagement = () => {
     };
 
     // Handle delete button click
-    const handleDeleteCategory = async (slug) => {
+    const handleDeleteCategory = async (id) => {
         if (window.confirm('Are you sure you want to delete this category?')) {
             setLoading(true);
             try {
-                await categoryApi.deleteCategory(slug);
+                await categoryApi.deleteCategory(id);
                 await loadCategories(); // Reload categories after deletion
                 setSuccessMessage('Category deleted successfully!');
             } catch (error) {
