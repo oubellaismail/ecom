@@ -14,8 +14,6 @@ const OrderValidation = () => {
     const [success, setSuccess] = useState('');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [sortBy, setSortBy] = useState('date');
-    const [sortOrder, setSortOrder] = useState('desc');
 
     // Load orders on mount and when filters change
     useEffect(() => {
@@ -26,8 +24,6 @@ const OrderValidation = () => {
                 const response = await orderService.getOrders({
                     page,
                     status: statusFilter,
-                    sortBy,
-                    sortOrder,
                     search: searchTerm
                 });
                 setOrders(response.data.orders);
@@ -43,7 +39,7 @@ const OrderValidation = () => {
         if (user) {
             loadOrders();
         }
-    }, [user, page, statusFilter, sortBy, sortOrder, searchTerm]);
+    }, [user, page, statusFilter, searchTerm]);
 
     // Handler for updating order status
     const updateOrderStatus = async (orderId, newStatus) => {
@@ -66,28 +62,6 @@ const OrderValidation = () => {
         } catch (error) {
             setError('Error updating order status. Please try again.');
             console.error('Order update error:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Handler for deleting an order
-    const handleDeleteOrder = async (orderId) => {
-        if (!window.confirm('Are you sure you want to delete this order?')) {
-            return;
-        }
-
-        try {
-            setLoading(true);
-            setError('');
-            setSuccess('');
-            await orderService.deleteOrder(orderId);
-            setOrders(orders.filter(order => order.id !== orderId));
-            setSuccess(`Order #${orderId} deleted successfully`);
-            setTimeout(() => setSuccess(''), 3000);
-        } catch (error) {
-            setError('Error deleting order. Please try again.');
-            console.error('Order delete error:', error);
         } finally {
             setLoading(false);
         }
@@ -141,23 +115,6 @@ const OrderValidation = () => {
         </svg>
     );
 
-    const BackIcon = () => (
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"></line>
-            <polyline points="12 19 5 12 12 5"></polyline>
-        </svg>
-    );
-
-    // Sort handler
-    const handleSort = (field) => {
-        if (sortBy === field) {
-            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-        } else {
-            setSortBy(field);
-            setSortOrder('asc');
-        }
-    };
-
     if (!user) {
         return null;
     }
@@ -205,7 +162,7 @@ const OrderValidation = () => {
                             </div>
 
                             {/* Navigation Menu */}
-                            <div className="nav flex-column">
+                            <div>
                                 <Link
                                     to="/dashboard"
                                     className="nav-link text-start py-3 px-4 mb-2"
@@ -220,7 +177,7 @@ const OrderValidation = () => {
                                     Dashboard
                                 </Link>
                                 <Link
-                                    to="/admin/products"
+                                    to="/AdminDashboard"
                                     className="nav-link text-start py-3 px-4 mb-2"
                                     style={{
                                         borderRadius: '12px',
@@ -245,22 +202,8 @@ const OrderValidation = () => {
                                 >
                                     Orders
                                 </Link>
-
                                 <Link
-                                    to="/admin/customers"
-                                    className="nav-link text-start py-3 px-4 mb-2"
-                                    style={{
-                                        borderRadius: '12px',
-                                        background: 'rgba(236, 236, 236, 0.7)',
-                                        color: '#333',
-                                        fontWeight: '500',
-                                        textDecoration: 'none'
-                                    }}
-                                >
-                                    Customers
-                                </Link>
-                                <Link
-                                    to="/admin/coupons"
+                                    to="/discount"
                                     className="nav-link text-start py-3 px-4 mb-2"
                                     style={{
                                         borderRadius: '12px',
@@ -271,19 +214,6 @@ const OrderValidation = () => {
                                     }}
                                 >
                                     Discount coupons
-                                </Link>
-                                <Link
-                                    to="/logout"
-                                    className="nav-link text-start py-3 px-4"
-                                    style={{
-                                        borderRadius: '12px',
-                                        background: 'rgba(236, 236, 236, 0.7)',
-                                        color: '#333',
-                                        fontWeight: '500',
-                                        textDecoration: 'none'
-                                    }}
-                                >
-                                    Logout
                                 </Link>
                             </div>
                         </div>
