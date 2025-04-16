@@ -3,21 +3,21 @@ import { Link } from 'react-router-dom';
 
 const HomeCarousel = () => {
   const [activeIndex, setActiveIndex] = useState(0);
-  
+
   const slides = [
     {
       id: 1,
-      image: '/images/1.jpg',
-      title: 'Summer Collection 2025',
-      subtitle: 'Discover the latest trends and styles',
+      image: '/images/c4.png',
+      title: 'TWO TONE REFLECTIVE VEST WITH LONG SLEEVES',
+      subtitle: 'Discover the latest in professional security wear',
       buttonText: 'Shop Now',
       buttonLink: '/shop',
       position: 'left'
     },
     {
       id: 2,
-      image: '/images/2.jpg',
-      title: 'Special Discounts',
+      image: '/images/c5.png',
+      title: 'kaliber patriot combat boots',
       subtitle: 'Up to 50% off on selected items',
       buttonText: 'View Offers',
       buttonLink: '/sale',
@@ -56,7 +56,7 @@ const HomeCarousel = () => {
     const interval = setInterval(() => {
       setActiveIndex((current) => (current === slides.length - 1 ? 0 : current + 1));
     }, 5000);
-    
+
     return () => clearInterval(interval);
   }, [slides.length]);
 
@@ -77,9 +77,9 @@ const HomeCarousel = () => {
       <div className="carousel-inner">
         {slides.map((slide, index) => (
           <div key={slide.id} className={`carousel-item ${index === activeIndex ? 'active' : ''}`}>
-            <img 
-              src={slide.image} 
-              className="d-block w-100" 
+            <img
+              src={slide.image}
+              className="d-block w-100"
               alt={slide.title}
               style={{ objectFit: 'cover', height: '70vh' }}
             />
@@ -116,17 +116,17 @@ const HomeCarousel = () => {
           </div>
         ))}
       </div>
-      
+
       <button className="carousel-control-prev" type="button" onClick={goToPrevSlide}>
         <span className="carousel-control-prev-icon" aria-hidden="true"></span>
         <span className="visually-hidden">Previous</span>
       </button>
-      
+
       <button className="carousel-control-next" type="button" onClick={goToNextSlide}>
         <span className="carousel-control-next-icon" aria-hidden="true"></span>
         <span className="visually-hidden">Next</span>
       </button>
-      
+
       <div className="carousel-indicators">
         {slides.map((_, index) => (
           <button

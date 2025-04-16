@@ -5,49 +5,75 @@ const Cart = () => {
   const [items, setItems] = useState([
     {
       id: 1,
-      name: 'Premium Wireless Headphones',
-      size: 'Standard',
-      color: 'Black',
+      name: 'kaliber kronos combat boot',
+      size: 'Foot wear',
+      color: '',
       price: 149.99,
-      image: '/images/7.jpg',
+      image: '/images/c2.png',
       quantity: 1,
     },
     {
       id: 2,
-      name: 'Smart Watch Series 5',
-      size: 'Medium',
-      color: 'Silver',
+      name: 'garret superscanner v',
+      size: 'Detectors',
+      color: '',
       price: 299.99,
-      image: '/images/6.jpg',
+      image: '/images/b2.png',
       quantity: 2,
     },
     {
       id: 3,
-      name: 'Ultrabook Pro 15',
-      size: '15-inch',
-      color: 'Space Gray',
+      name: '2l water bottle pouch',
+      size: 'water bottle',
+      color: '',
       price: 1099.99,
-      image: '/images/5.jpg',
+      image: '/images/b3.png',
       quantity: 1,
     },
   ]);
 
+  const [coupon, setCoupon] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [discount, setDiscount] = useState(0);
+  const [couponMessage, setCouponMessage] = useState('');
+
+  const validCoupons = {
+    'SAVE10': 100,
+    'TEST25': 25,
+  };
   const handleDelete = (id) => {
-    setItems((prevItems) => prevItems.filter((item) => item.id !== id));
+    setItems(prevItems => prevItems.filter(item => item.id !== id));
   };
 
   const handleQuantityChange = (id, value) => {
-    setItems(prevItems => 
-      prevItems.map(item => 
-        item.id === id ? {...item, quantity: parseInt(value)} : item
+    setItems(prevItems =>
+      prevItems.map(item =>
+        item.id === id ? { ...item, quantity: parseInt(value) } : item
       )
     );
   };
 
-  // Calculate totals
+  const handleApplyCoupon = (e) => {
+    e.preventDefault();
+    const code = coupon.trim().toUpperCase();
+
+    if (appliedCoupon === code) {
+      setCouponMessage(`Coupon "${code}" already applied.`);
+    } else if (validCoupons[code]) {
+      setDiscount(prev => prev + validCoupons[code]);
+      setAppliedCoupon(code);
+      setCouponMessage(`Coupon "${code}" applied!`);
+    } else {
+      setCouponMessage('Invalid coupon code.');
+    }
+
+    setCoupon('');
+  };
+
+
+  // Totals
   const subtotal = items.reduce((total, item) => total + (item.price * item.quantity), 0);
-  const vat = subtotal * 0.1; // 10% VAT
-  const discount = 45.99; // Example discount
+  const vat = subtotal * 0.1;
   const total = subtotal + vat - discount;
 
   // Trash icon SVG
@@ -110,16 +136,16 @@ const Cart = () => {
                   <ul className="list-unstyled mb-0">
                     {items.map((item) => (
                       <li key={item.id} className="d-flex align-items-center gap-3 mb-4 pb-4" style={{
-                        borderBottom: item.id !== items[items.length-1].id ? '1px solid rgba(0,0,0,0.1)' : 'none'
+                        borderBottom: item.id !== items[items.length - 1].id ? '1px solid rgba(0,0,0,0.1)' : 'none'
                       }}>
                         <div style={{ position: 'relative', width: '100px', height: '100px' }}>
                           <img
                             src={item.image}
                             alt={item.name}
                             className="rounded"
-                            style={{ 
-                              width: '100%', 
-                              height: '100%', 
+                            style={{
+                              width: '100%',
+                              height: '100%',
                               objectFit: 'cover',
                               borderRadius: '12px',
                               boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
@@ -129,8 +155,7 @@ const Cart = () => {
                         <div className="flex-grow-1">
                           <h5 className="mb-1 fw-bold">{item.name}</h5>
                           <div className="d-flex mb-2">
-                            <span className="me-3 text-muted" style={{ fontSize: '0.9rem' }}>Size: {item.size}</span>
-                            <span className="text-muted" style={{ fontSize: '0.9rem' }}>Color: {item.color}</span>
+                            <span className="me-3 text-muted" style={{ fontSize: '0.9rem' }}>category: {item.size}</span>
                           </div>
                           <span className="fw-bold" style={{ color: '#ff4d4d' }}>${item.price.toFixed(2)}</span>
                         </div>
@@ -176,8 +201,41 @@ const Cart = () => {
                 boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
               }}>
                 <div className="card-body p-4">
+
+                  {/* Coupon Code Form */}
+                  <form onSubmit={handleApplyCoupon} className="mb-4">
+                    <label className="form-label fw-semibold">Have a coupon?</label>
+                    <div className="input-group">
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={coupon}
+                        onChange={(e) => setCoupon(e.target.value)}
+                        placeholder="Enter coupon code"
+                      />
+                      <button
+                        type="submit"
+                        className="btn"
+                        style={{
+                          background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
+                          color: 'white',
+                          fontWeight: '500'
+                        }}
+                      >
+                        Apply
+                      </button>
+                    </div>
+                    {couponMessage && (
+                      <small className={couponMessage.includes('applied') ? 'text-success' : 'text-danger'}>
+                        {couponMessage}
+                      </small>
+                    )}
+                  </form>
+
+
+                  {/* Order Summary */}
                   <h5 className="fw-bold mb-3">Order Summary</h5>
-                  
+
                   <div className="mb-2 d-flex justify-content-between">
                     <span className="text-muted">Subtotal</span>
                     <span>${subtotal.toFixed(2)}</span>
@@ -202,7 +260,7 @@ const Cart = () => {
                       fontSize: '0.85rem',
                       borderRadius: '8px'
                     }}>
-                      <PercentIcon /> 2 Discounts Applied
+                      <PercentIcon /> {appliedCoupon ? 'Coupon & Manual Discount Applied' : 'Manual Discount Applied'}
                     </span>
                   </div>
 

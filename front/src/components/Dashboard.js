@@ -44,7 +44,7 @@ const Dashboard = () => {
     };
 
     return (
-      <span className="badge px-3 py-2" style={{ 
+      <span className="badge px-3 py-2" style={{
         ...getBadgeStyle(),
         borderRadius: '8px',
         fontSize: '0.75rem'
@@ -57,14 +57,14 @@ const Dashboard = () => {
   // Chart bars component
   const ChartBars = ({ data }) => {
     const max = Math.max(...data.map(item => item.sales));
-    
+
     return (
       <div className="d-flex align-items-end justify-content-between mt-3" style={{ height: '150px' }}>
         {data.map((item, index) => (
           <div key={index} className="d-flex flex-column align-items-center" style={{ width: `${100 / data.length}%` }}>
-            <div 
-              style={{ 
-                height: `${(item.sales / max) * 100}%`, 
+            <div
+              style={{
+                height: `${(item.sales / max) * 100}%`,
                 width: '80%',
                 borderRadius: '6px 6px 0 0',
                 background: 'linear-gradient(180deg, #ff4d4d, #f9cb28)'
@@ -147,8 +147,8 @@ const Dashboard = () => {
 
               {/* Navigation Menu */}
               <div className="nav flex-column">
-                <Link 
-                  to="/dashboard" 
+                <Link
+                  to="/dashboard"
                   className="nav-link text-start py-3 px-4 mb-2"
                   style={{
                     borderRadius: '12px',
@@ -160,8 +160,8 @@ const Dashboard = () => {
                 >
                   Dashboard
                 </Link>
-                <Link 
-                  to="/AdminDashboard" 
+                <Link
+                  to="/AdminDashboard"
                   className="nav-link text-start py-3 px-4 mb-2"
                   style={{
                     borderRadius: '12px',
@@ -173,8 +173,8 @@ const Dashboard = () => {
                 >
                   Products
                 </Link>
-                <Link 
-                  to="/admin/orders" 
+                <Link
+                  to="/order"
                   className="nav-link text-start py-3 px-4 mb-2"
                   style={{
                     borderRadius: '12px',
@@ -186,21 +186,10 @@ const Dashboard = () => {
                 >
                   Orders
                 </Link>
-                <Link 
-                  to="/admin/customers" 
-                  className="nav-link text-start py-3 px-4 mb-2"
-                  style={{
-                    borderRadius: '12px',
-                    background: 'rgba(236, 236, 236, 0.7)',
-                    color: '#333',
-                    fontWeight: '500',
-                    textDecoration: 'none'
-                  }}
-                >
-                  Customers
-                </Link>
-                <Link 
-                  to="/logout" 
+
+
+                <Link
+                  to="/discount"
                   className="nav-link text-start py-3 px-4"
                   style={{
                     borderRadius: '12px',
@@ -210,7 +199,7 @@ const Dashboard = () => {
                     textDecoration: 'none'
                   }}
                 >
-                  Logout
+                  Discount coupons
                 </Link>
               </div>
             </div>
@@ -329,6 +318,7 @@ const Dashboard = () => {
                 <div className="card-body p-4">
                   <h5 className="fw-bold mb-4">Sales Overview</h5>
                   <ChartBars data={stats.salesData} />
+
                   <div className="d-flex justify-content-between mt-4">
                     <div>
                       <h6 className="text-muted mb-1">Monthly Average</h6>
@@ -357,7 +347,7 @@ const Dashboard = () => {
               }}>
                 <div className="card-body p-4">
                   <h5 className="fw-bold mb-4">Alerts</h5>
-                  
+
                   <div className="d-flex align-items-center p-3 mb-3" style={{
                     background: 'rgba(255, 77, 77, 0.1)',
                     borderRadius: '12px'
@@ -370,7 +360,7 @@ const Dashboard = () => {
                       <p className="mb-0" style={{ fontSize: '0.9rem' }}>{stats.pendingOrders} orders need processing</p>
                     </div>
                   </div>
-                  
+
                   <div className="d-flex align-items-center p-3" style={{
                     background: 'rgba(249, 203, 40, 0.1)',
                     borderRadius: '12px'
@@ -383,10 +373,10 @@ const Dashboard = () => {
                       <p className="mb-0" style={{ fontSize: '0.9rem' }}>{stats.lowStockItems} products are low in stock</p>
                     </div>
                   </div>
-                  
+
                   <div className="mt-4">
-                    <Link 
-                      to="/admin/products" 
+                    <Link
+                      to="/admin/products"
                       className="btn w-100"
                       style={{
                         background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
@@ -416,8 +406,8 @@ const Dashboard = () => {
             <div className="card-body p-4">
               <div className="d-flex justify-content-between align-items-center mb-4">
                 <h5 className="fw-bold mb-0">Recent Orders</h5>
-                <Link 
-                  to="/admin/orders" 
+                <Link
+                  to="/admin/orders"
                   className="btn btn-sm"
                   style={{
                     background: 'rgba(236, 236, 236, 0.7)',
@@ -430,7 +420,7 @@ const Dashboard = () => {
                   View All
                 </Link>
               </div>
-              
+
               <div className="table-responsive">
                 <table className="table">
                   <thead>

@@ -5,26 +5,26 @@ const NewArrivals = () => {
   const arrivals = [
     {
       id: 1,
-      name: "Ultra HD Smart TV 55\"",
-      category: "Electronics",
+      name: "kaliber kronos combat boot",
+      category: "Foot wear",
       price: 699.99,
-      image: '/images/2.jpg',
+      image: '/images/c2.png',
       dateAdded: "3 days ago"
     },
     {
       id: 2,
-      name: "Premium Wireless Earbuds",
-      category: "Audio",
+      name: "garret superscanner v",
+      category: "Detectors",
       price: 129.99,
-      image: '/images/6.jpg',
+      image: '/images/b2.png',
       dateAdded: "1 week ago"
     },
     {
       id: 3,
-      name: "Digital SLR Camera Kit",
-      category: "Photography",
+      name: "2l water bottle pouch",
+      category: "water bottle ",
       price: 849.99,
-      image: '/images/5.jpg',
+      image: '/images/b3.png',
       dateAdded: "5 days ago"
     }
   ];
@@ -38,7 +38,7 @@ const NewArrivals = () => {
           <h2 className="fw-bold mb-2">New Arrivals</h2>
           <p className="text-muted">Be the first to check out our latest products</p>
         </div>
-        
+
         <div className="row">
           {arrivals.map((item, index) => (
             <div key={item.id} className="col-md-4 mb-4">
@@ -49,9 +49,9 @@ const NewArrivals = () => {
                 transform: index === 1 ? 'translateY(-20px)' : 'none'
               }}>
                 <div style={{ position: 'relative' }}>
-                  <img 
-                    src={item.image} 
-                    className="card-img-top" 
+                  <img
+                    src={item.image}
+                    className="card-img-top"
                     alt={item.name}
                     style={{ height: '300px', objectFit: 'cover' }}
                   />
@@ -82,8 +82,8 @@ const NewArrivals = () => {
                     <p className="fw-bold mb-3">${item.price}</p>
                   </div>
                   <div className="d-grid">
-                    <Link 
-                      to={`/product/${item.id}`} 
+                    <Link
+                      to={`/product/${item.id}`}
                       className="btn"
                       style={{
                         background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
@@ -102,7 +102,7 @@ const NewArrivals = () => {
             </div>
           ))}
         </div>
-        
+
         <div className="text-center mt-4">
           <Link to="//product/:id" className="btn btn-outline-dark" style={{
             borderRadius: '25px',

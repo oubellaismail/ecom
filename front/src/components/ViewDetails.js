@@ -15,11 +15,11 @@ const ViewDetails = () => {
       const mockProducts = [
         {
           id: 1,
-          name: "Ultra HD Smart TV 55\"",
-          category: "Electronics",
+          name: "kaliber kronos combat boot",
+          category: "Foot wear",
           price: 699.99,
-          image: '/images/2.jpg',
-          description: "Experience crystal-clear visuals with this 55-inch Ultra HD Smart TV. Features include AI-powered upscaling, voice control, and seamless streaming capabilities.",
+          image: '/images/c2.png',
+          description: "genuine leather upper Steel toe cap – 200 Joules Shock absorbent dual density Polyurethane sole unit Padded collar for comfort anti slip outsole oil resistant outsole Light weight ",
           qte_stock: 15
         },
         {
@@ -90,9 +90,9 @@ const ViewDetails = () => {
     );
   }
 
-  const stockStatus = product.qte_stock > 10 
+  const stockStatus = product.qte_stock > 10
     ? { text: "In Stock", class: "text-success" }
-    : product.qte_stock > 0 
+    : product.qte_stock > 0
       ? { text: "Low Stock", class: "text-warning" }
       : { text: "Out of Stock", class: "text-danger" };
 
@@ -109,13 +109,13 @@ const ViewDetails = () => {
       <div className="row">
         {/* Product Image */}
         <div className="col-md-6 mb-4">
-          <div 
+          <div
             className="bg-light rounded-4 d-flex align-items-center justify-content-center"
             style={{ height: "500px", overflow: "hidden" }}
           >
-            <img 
-              src={product.image} 
-              alt={product.name} 
+            <img
+              src={product.image}
+              alt={product.name}
               className="img-fluid rounded-4"
               style={{ objectFit: "contain", maxHeight: "100%" }}
             />
@@ -128,7 +128,7 @@ const ViewDetails = () => {
             <span className="badge bg-secondary mb-2">{product.category}</span>
             <h2 className="fw-bold mb-3">{product.name}</h2>
             <p className="h3 mb-4">${product.price.toFixed(2)}</p>
-            
+
             <div className="mb-4">
               <h6 className="fw-bold mb-2">Description:</h6>
               <p className="text-muted">{product.description}</p>
@@ -137,7 +137,7 @@ const ViewDetails = () => {
             <div className="d-flex align-items-center mb-4">
               <h6 className="fw-bold me-3 mb-0">Availability:</h6>
               <p className={`mb-0 ${stockStatus.class}`}>
-                {stockStatus.text} 
+                {stockStatus.text}
                 {product.qte_stock > 0 && (
                   <span className="text-muted ms-2">({product.qte_stock} items)</span>
                 )}
@@ -148,22 +148,22 @@ const ViewDetails = () => {
               <div className="mb-4">
                 <h6 className="fw-bold mb-3">Quantity:</h6>
                 <div className="d-flex align-items-center" style={{ maxWidth: "150px" }}>
-                  <button 
-                    className="btn btn-outline-secondary" 
+                  <button
+                    className="btn btn-outline-secondary"
                     onClick={decrementQuantity}
                     disabled={quantity <= 1}
                   >
                     -
                   </button>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     className="form-control mx-2 text-center"
                     value={quantity}
                     onChange={handleQuantityChange}
                     min="1"
                     max={product.qte_stock}
                   />
-                  <button 
+                  <button
                     className="btn btn-outline-secondary"
                     onClick={incrementQuantity}
                     disabled={quantity >= product.qte_stock}
@@ -175,8 +175,8 @@ const ViewDetails = () => {
             )}
 
             <div className="d-grid gap-2 d-md-flex mt-4">
-              <button 
-                className="btn btn-lg flex-grow-1" 
+              <button
+                className="btn btn-lg flex-grow-1"
                 style={{
                   background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
                   color: 'white',

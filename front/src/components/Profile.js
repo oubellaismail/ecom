@@ -3,14 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 
 const Profile = () => {
     const navigate = useNavigate();
-    
+
     const user = {
         name: 'John Doe',
     };
-    
+
     // État pour contrôler l'affichage de toutes les commandes
     const [showAllOrders, setShowAllOrders] = useState(false);
-    
+
     // Données factices pour les commandes récentes
     const stats = {
         recentSales: [
@@ -24,17 +24,17 @@ const Profile = () => {
             { id: 8, customer: 'Henry Taylor', date: '2025-03-29', amount: 322.75, status: 'completed' }
         ]
     };
-    
+
     // Commandes à afficher - limitées ou toutes
-    const displayedOrders = showAllOrders 
-        ? stats.recentSales 
+    const displayedOrders = showAllOrders
+        ? stats.recentSales
         : stats.recentSales.slice(0, 4);
-    
+
     // Composant pour le badge de statut
     const StatusBadge = ({ status }) => {
         let badgeClass = 'badge ';
-        
-        switch(status) {
+
+        switch (status) {
             case 'completed':
                 badgeClass += 'bg-success';
                 break;
@@ -47,24 +47,24 @@ const Profile = () => {
             default:
                 badgeClass += 'bg-secondary';
         }
-        
+
         return <span className={badgeClass}>{status}</span>;
     };
-    
+
     // Fonction pour basculer l'affichage
     const toggleOrdersDisplay = () => {
         setShowAllOrders(!showAllOrders);
     };
-    
+
     // Fonction de déconnexion
     const handleLogout = () => {
         // Ici vous pourriez ajouter une logique pour supprimer le token d'authentification, etc.
         // Par exemple: localStorage.removeItem('authToken');
-        
+
         // Redirection vers la page d'accueil
         navigate('/');
     };
-    
+
     return (
         <div className="container my-5">
             <div className="row justify-content-center">
@@ -90,10 +90,10 @@ const Profile = () => {
                                 <h2 className="fw-bold mb-1">Hello, {user.name}</h2>
                                 <p className="text-muted">Manage your account</p>
                             </div>
-                            
+
                             <div className="d-flex justify-content-between mt-4">
-                                <Link 
-                                    to="/edit-profile" 
+                                <Link
+                                    to="/edit-profile"
                                     className="btn w-100 me-2"
                                     style={{
                                         background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
@@ -106,7 +106,7 @@ const Profile = () => {
                                 >
                                     Edit Profile
                                 </Link>
-                                <button 
+                                <button
                                     className="btn w-100 ms-2"
                                     onClick={handleLogout}
                                     style={{
@@ -125,7 +125,7 @@ const Profile = () => {
                     </div>
                 </div>
             </div>
-            
+
             {/* Recent Orders */}
             <div className="row justify-content-center mt-4">
                 <div className="col-12">
@@ -153,13 +153,12 @@ const Profile = () => {
                                     {showAllOrders ? 'View Less' : 'View All'}
                                 </button>
                             </div>
-                            
+
                             <div className="table-responsive">
                                 <table className="table">
                                     <thead>
                                         <tr>
                                             <th scope="col" style={{ fontWeight: '500', fontSize: '0.9rem' }}>Order ID</th>
-                                            <th scope="col" style={{ fontWeight: '500', fontSize: '0.9rem' }}>Customer</th>
                                             <th scope="col" style={{ fontWeight: '500', fontSize: '0.9rem' }}>Date</th>
                                             <th scope="col" style={{ fontWeight: '500', fontSize: '0.9rem' }}>Amount</th>
                                             <th scope="col" style={{ fontWeight: '500', fontSize: '0.9rem' }}>Status</th>
@@ -170,14 +169,13 @@ const Profile = () => {
                                         {displayedOrders.map((order) => (
                                             <tr key={order.id}>
                                                 <td>#{order.id + 1000}</td>
-                                                <td>{order.customer}</td>
                                                 <td>{order.date}</td>
                                                 <td>${order.amount.toFixed(2)}</td>
                                                 <td>
                                                     <StatusBadge status={order.status} />
                                                 </td>
                                                 <td>
-                                                    <Link 
+                                                    <Link
                                                         to={`/order/${order.id}`}
                                                         className="btn btn-sm"
                                                         style={{
@@ -197,19 +195,19 @@ const Profile = () => {
                                     </tbody>
                                 </table>
                             </div>
-                            
+
                             {/* Separator */}
                             <div className="d-flex align-items-center my-4">
                                 <div className="flex-grow-1 border-bottom"></div>
                             </div>
-                            
+
                             {/* View all orders link */}
                             <div className="text-center">
-                                <Link 
-                                    to="/orders" 
-                                    className="text-decoration-none" 
-                                    style={{ 
-                                        color: '#ff4d4d', 
+                                <Link
+                                    to="/orders"
+                                    className="text-decoration-none"
+                                    style={{
+                                        color: '#ff4d4d',
                                         fontWeight: '500',
                                         fontSize: '0.9rem'
                                     }}
