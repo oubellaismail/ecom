@@ -7,8 +7,7 @@ export const categoryApi = {
             const response = await axiosInstance.get('/categories');
             return response.data;
         } catch (error) {
-            console.error('Error fetching categories:', error);
-            throw error;
+            throw error.response?.data || error;
         }
     },
 
@@ -18,8 +17,7 @@ export const categoryApi = {
             const response = await axiosInstance.get(`/categories/${slug}`);
             return response.data;
         } catch (error) {
-            console.error('Error fetching category:', error);
-            throw error;
+            throw error.response?.data || error;
         }
     },
 
@@ -29,8 +27,7 @@ export const categoryApi = {
             const response = await axiosInstance.post('/categories', categoryData);
             return response.data;
         } catch (error) {
-            console.error('Error creating category:', error);
-            throw error;
+            throw error.response?.data || error;
         }
     },
 
@@ -40,8 +37,7 @@ export const categoryApi = {
             const response = await axiosInstance.put(`/categories/${slug}`, categoryData);
             return response.data;
         } catch (error) {
-            console.error('Error updating category:', error);
-            throw error;
+            throw error.response?.data || error;
         }
     },
 
@@ -51,8 +47,7 @@ export const categoryApi = {
             const response = await axiosInstance.delete(`/categories/${slug}`);
             return response.data;
         } catch (error) {
-            console.error('Error deleting category:', error);
-            throw error;
+            throw error.response?.data || error;
         }
     }
 };

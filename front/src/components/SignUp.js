@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link , useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { registerUser } from '../api/authService';
 
 const SignUp = () => {
@@ -15,7 +15,7 @@ const SignUp = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
@@ -25,7 +25,7 @@ const SignUp = () => {
     setErrorMessage('');
     setSuccessMessage('');
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -33,7 +33,7 @@ const SignUp = () => {
       if (formData.password !== formData.password_confirmation) {
         setErrorMessage("Passwords do not match");
         return;
-      }      
+      }
       const data = await registerUser(formData);
       setSuccessMessage('Account created successfully!');
       console.log('Registration successful:', data);
@@ -69,23 +69,23 @@ const SignUp = () => {
                 </h1>
                 <p className="text-muted">Create your shopping account</p>
               </div>
-              
+
               {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
               {successMessage && <div className="alert alert-success">{successMessage}</div>}
-              
+
               <form onSubmit={handleSubmit}>
                 {/* First Name field */}
                 <div className="mb-3">
                   <label className="form-label" style={{ fontWeight: '500', fontSize: '0.9rem' }}>
                     First Name
                   </label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     name="first_name"
-                    className="form-control" 
+                    className="form-control"
                     value={formData.firstName}
                     onChange={handleChange}
-                    placeholder="Enter your first name" 
+                    placeholder="Enter your first name"
                     style={{
                       padding: '12px 16px',
                       borderRadius: '12px',
@@ -95,19 +95,19 @@ const SignUp = () => {
                     required
                   />
                 </div>
-                
+
                 {/* Last Name field */}
                 <div className="mb-3">
                   <label className="form-label" style={{ fontWeight: '500', fontSize: '0.9rem' }}>
                     Last Name
                   </label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     name="last_name"
-                    className="form-control" 
+                    className="form-control"
                     value={formData.lastName}
                     onChange={handleChange}
-                    placeholder="Enter your last name" 
+                    placeholder="Enter your last name"
                     style={{
                       padding: '12px 16px',
                       borderRadius: '12px',
@@ -117,19 +117,19 @@ const SignUp = () => {
                     required
                   />
                 </div>
-                
+
                 {/* Email field */}
                 <div className="mb-3">
                   <label className="form-label" style={{ fontWeight: '500', fontSize: '0.9rem' }}>
                     Email Address
                   </label>
-                  <input 
-                    type="email" 
+                  <input
+                    type="email"
                     name="email"
-                    className="form-control" 
+                    className="form-control"
                     value={formData.email}
                     onChange={handleChange}
-                    placeholder="your@email.com" 
+                    placeholder="your@email.com"
                     style={{
                       padding: '12px 16px',
                       borderRadius: '12px',
@@ -139,19 +139,19 @@ const SignUp = () => {
                     required
                   />
                 </div>
-                
+
                 {/* Password field */}
                 <div className="mb-3">
                   <label className="form-label" style={{ fontWeight: '500', fontSize: '0.9rem' }}>
                     Password
                   </label>
-                  <input 
-                    type="password" 
+                  <input
+                    type="password"
                     name="password"
-                    className="form-control" 
+                    className="form-control"
                     value={formData.password}
                     onChange={handleChange}
-                    placeholder="Create a password" 
+                    placeholder="Create a password"
                     style={{
                       padding: '12px 16px',
                       borderRadius: '12px',
@@ -161,19 +161,19 @@ const SignUp = () => {
                     required
                   />
                 </div>
-                
+
                 {/* Confirm Password field */}
                 <div className="mb-4">
                   <label className="form-label" style={{ fontWeight: '500', fontSize: '0.9rem' }}>
                     Confirm Password
                   </label>
-                  <input 
-                    type="password" 
+                  <input
+                    type="password"
                     name="password_confirmation"
-                    className="form-control" 
+                    className="form-control"
                     value={formData.password_confirmation}
                     onChange={handleChange}
-                    placeholder="Confirm your password" 
+                    placeholder="Confirm your password"
                     style={{
                       padding: '12px 16px',
                       borderRadius: '12px',
@@ -183,13 +183,13 @@ const SignUp = () => {
                     required
                   />
                 </div>
-                
-              
-                
+
+
+
                 {/* Sign up button */}
-                <button 
+                <button
                   disabled={isLoading}
-                  type="submit" 
+                  type="submit"
                   className="btn w-100 mb-3"
                   style={{
                     background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
@@ -200,14 +200,14 @@ const SignUp = () => {
                     boxShadow: '0 4px 15px rgba(255, 77, 77, 0.2)'
                   }}
                 >
-                   {isLoading ? 'Creating...' : 'Create Account'}
+                  {isLoading ? 'Creating...' : 'Create Account'}
                 </button>
-                
+
                 {/* Separator */}
                 <div className="d-flex align-items-center my-4">
                   <div className="flex-grow-1 border-bottom"></div>
                 </div>
-                
+
                 {/* Sign in link */}
                 <div className="text-center" style={{ fontSize: '0.9rem' }}>
                   Already have an account?{' '}

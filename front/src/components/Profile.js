@@ -1,34 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import orderService from '../api/orderService';
+import { logoutUser } from '../api/authService';
+import { useAuth } from '../context/AuthContext';
 
 const Profile = () => {
     const navigate = useNavigate();
-
-    const user = {
-        name: 'John Doe',
-    };
-
-    // État pour contrôler l'affichage de toutes les commandes
+    const { user, logout } = useAuth();
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [orders, setOrders] = useState([]);
     const [showAllOrders, setShowAllOrders] = useState(false);
 
-    // Données factices pour les commandes récentes
-    const stats = {
-        recentSales: [
-            { id: 1, customer: 'Alice Smith', date: '2025-04-05', amount: 125.99, status: 'completed' },
-            { id: 2, customer: 'Bob Johnson', date: '2025-04-04', amount: 89.50, status: 'pending' },
-            { id: 3, customer: 'Carol Davis', date: '2025-04-03', amount: 245.75, status: 'processing' },
-            { id: 4, customer: 'David Wilson', date: '2025-04-02', amount: 67.25, status: 'completed' },
-            { id: 5, customer: 'Eva Martinez', date: '2025-04-01', amount: 154.20, status: 'pending' },
-            { id: 6, customer: 'Frank Brown', date: '2025-03-31', amount: 210.50, status: 'completed' },
-            { id: 7, customer: 'Grace Lee', date: '2025-03-30', amount: 78.99, status: 'processing' },
-            { id: 8, customer: 'Henry Taylor', date: '2025-03-29', amount: 322.75, status: 'completed' }
-        ]
-    };
+    useEffect(() => {
+        const loadOrders = async () => {
+            try {
+                setLoading(true);
+                const response = await orderService.getUserOrders();
+                setOrders(response.data);
+            } catch (error) {
+                setError('Error loading orders. Please try again.');
+                console.error('Orders error:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (user) {
+            loadOrders();
+        }
+    }, [user]);
 
     // Commandes à afficher - limitées ou toutes
     const displayedOrders = showAllOrders
-        ? stats.recentSales
-        : stats.recentSales.slice(0, 4);
+        ? orders
+        : orders.slice(0, 4);
 
     // Composant pour le badge de statut
     const StatusBadge = ({ status }) => {
@@ -57,16 +63,29 @@ const Profile = () => {
     };
 
     // Fonction de déconnexion
-    const handleLogout = () => {
-        // Ici vous pourriez ajouter une logique pour supprimer le token d'authentification, etc.
-        // Par exemple: localStorage.removeItem('authToken');
-
-        // Redirection vers la page d'accueil
-        navigate('/');
+    const handleLogout = async () => {
+        try {
+            setLoading(true);
+            await logoutUser();
+            logout();
+            navigate('/');
+        } catch (error) {
+            setError('Error logging out. Please try again.');
+            console.error('Logout error:', error);
+        } finally {
+            setLoading(false);
+        }
     };
+
+    if (!user) {
+        navigate('/signin');
+        return null;
+    }
 
     return (
         <div className="container my-5">
+            {error && <div className="alert alert-danger">{error}</div>}
+
             <div className="row justify-content-center">
                 <div className="col-md-6">
                     <div className="card border-0" style={{
@@ -87,7 +106,7 @@ const Profile = () => {
                                 }}>
                                     3Ecom
                                 </h1>
-                                <h2 className="fw-bold mb-1">Hello, {user.name}</h2>
+                                <h2 className="fw-bold mb-1">Hello, {user.first_name} {user.last_name}</h2>
                                 <p className="text-muted">Manage your account</p>
                             </div>
 
@@ -109,6 +128,7 @@ const Profile = () => {
                                 <button
                                     className="btn w-100 ms-2"
                                     onClick={handleLogout}
+                                    disabled={loading}
                                     style={{
                                         background: 'rgba(236, 236, 236, 0.7)',
                                         color: '#333',
@@ -118,7 +138,7 @@ const Profile = () => {
                                         border: 'none'
                                     }}
                                 >
-                                    Logout
+                                    {loading ? 'Logging out...' : 'Logout'}
                                 </button>
                             </div>
                         </div>
@@ -154,47 +174,59 @@ const Profile = () => {
                                 </button>
                             </div>
 
-                            <div className="table-responsive">
-                                <table className="table">
-                                    <thead>
-                                        <tr>
-                                            <th scope="col" style={{ fontWeight: '500', fontSize: '0.9rem' }}>Order ID</th>
-                                            <th scope="col" style={{ fontWeight: '500', fontSize: '0.9rem' }}>Date</th>
-                                            <th scope="col" style={{ fontWeight: '500', fontSize: '0.9rem' }}>Amount</th>
-                                            <th scope="col" style={{ fontWeight: '500', fontSize: '0.9rem' }}>Status</th>
-                                            <th scope="col" style={{ fontWeight: '500', fontSize: '0.9rem' }}>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {displayedOrders.map((order) => (
-                                            <tr key={order.id}>
-                                                <td>#{order.id + 1000}</td>
-                                                <td>{order.date}</td>
-                                                <td>${order.amount.toFixed(2)}</td>
-                                                <td>
-                                                    <StatusBadge status={order.status} />
-                                                </td>
-                                                <td>
-                                                    <Link
-                                                        to={`/order/${order.id}`}
-                                                        className="btn btn-sm"
-                                                        style={{
-                                                            background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
-                                                            color: 'white',
-                                                            fontWeight: '500',
-                                                            padding: '4px 10px',
-                                                            borderRadius: '8px',
-                                                            fontSize: '0.8rem'
-                                                        }}
-                                                    >
-                                                        Details
-                                                    </Link>
-                                                </td>
+                            {loading ? (
+                                <div className="text-center py-4">
+                                    <div className="spinner-border text-primary" role="status">
+                                        <span className="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            ) : orders.length === 0 ? (
+                                <div className="text-center py-4">
+                                    <p className="text-muted">No orders found.</p>
+                                </div>
+                            ) : (
+                                <div className="table-responsive">
+                                    <table className="table">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col" style={{ fontWeight: '500', fontSize: '0.9rem' }}>Order ID</th>
+                                                <th scope="col" style={{ fontWeight: '500', fontSize: '0.9rem' }}>Date</th>
+                                                <th scope="col" style={{ fontWeight: '500', fontSize: '0.9rem' }}>Amount</th>
+                                                <th scope="col" style={{ fontWeight: '500', fontSize: '0.9rem' }}>Status</th>
+                                                <th scope="col" style={{ fontWeight: '500', fontSize: '0.9rem' }}>Action</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                        </thead>
+                                        <tbody>
+                                            {displayedOrders.map((order) => (
+                                                <tr key={order.id}>
+                                                    <td>#{order.id}</td>
+                                                    <td>{new Date(order.created_at).toLocaleDateString()}</td>
+                                                    <td>${order.total_amount.toFixed(2)}</td>
+                                                    <td>
+                                                        <StatusBadge status={order.status} />
+                                                    </td>
+                                                    <td>
+                                                        <Link
+                                                            to={`/order/${order.id}`}
+                                                            className="btn btn-sm"
+                                                            style={{
+                                                                background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
+                                                                color: 'white',
+                                                                fontWeight: '500',
+                                                                padding: '4px 10px',
+                                                                borderRadius: '8px',
+                                                                fontSize: '0.8rem'
+                                                            }}
+                                                        >
+                                                            Details
+                                                        </Link>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
 
                             {/* Separator */}
                             <div className="d-flex align-items-center my-4">

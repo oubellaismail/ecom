@@ -1,62 +1,79 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { productApi } from '../api/productService';
+import cartService from '../api/cartService';
+import { useAuth } from '../context/AuthContext';
 
 const ViewDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const [success, setSuccess] = useState('');
+  const [addingToCart, setAddingToCart] = useState(false);
 
-  // Mock fetch product data - in a real app this would be an API call
+  // Fetch product data
   useEffect(() => {
-    // Simulate API call with mock data
-    setTimeout(() => {
-      // Mock product data with all required fields
-      const mockProducts = [
-        {
-          id: 1,
-          name: "kaliber kronos combat boot",
-          category: "Foot wear",
-          price: 699.99,
-          image: '/images/c2.png',
-          description: "genuine leather upper Steel toe cap – 200 Joules Shock absorbent dual density Polyurethane sole unit Padded collar for comfort anti slip outsole oil resistant outsole Light weight ",
-          qte_stock: 15
-        },
-        {
-          id: 2,
-          name: "Premium Wireless Earbuds",
-          category: "Audio",
-          price: 129.99,
-          image: '/images/6.jpg',
-          description: "Immerse yourself in premium sound quality with these wireless earbuds. Featuring active noise cancellation, water resistance, and 24-hour battery life.",
-          qte_stock: 42
-        },
-        {
-          id: 3,
-          name: "Digital SLR Camera Kit",
-          category: "Photography",
-          price: 849.99,
-          image: '/images/5.jpg',
-          description: "Capture professional quality images with this DSLR camera kit. Includes an 18-55mm lens, UV filter, and camera bag. Perfect for beginners and enthusiasts alike.",
-          qte_stock: 8
-        }
-      ];
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        const response = await productApi.getProduct(id);
+        // Handle different response formats
+        const productData = response.data ? response.data : response;
 
-      const foundProduct = mockProducts.find(p => p.id === parseInt(id));
-      setProduct(foundProduct);
-      setLoading(false);
-    }, 800);
+        console.log("Raw product data:", productData);
+
+        // Transform the data to ensure consistent structure and convert objects to strings
+        const transformedProduct = {
+          id: productData.id || productData._id,
+          name: productData.name || "Product",
+          description: productData.description || "No description available",
+          // Handle price - ensure it's a number
+          price: typeof productData.price === 'number' ? productData.price :
+            typeof productData.price === 'string' ? parseFloat(productData.price) :
+              (productData.product_item && productData.product_item.price) || 0,
+          // Handle category - ensure it's a string
+          category: typeof productData.category === 'string' ? productData.category :
+            typeof productData.category_name === 'string' ? productData.category_name :
+              typeof productData.category_slug === 'string' ? productData.category_slug :
+                "Uncategorized",
+          // Handle all possible image properties
+          image: productData.image ||
+            productData.product_image ||
+            (productData.product_item && productData.product_item.product_image) ||
+            '/placeholder-image.jpg', // Fallback image
+          qte_stock: parseInt(productData.qte_stock) ||
+            parseInt(productData.qty_in_stock) ||
+            (productData.product_item && parseInt(productData.product_item.qty_in_stock)) ||
+            0
+        };
+
+        console.log('Transformed product data:', transformedProduct);
+        setProduct(transformedProduct);
+      } catch (error) {
+        setError('Error loading product details. Please try again.');
+        console.error('Product fetch error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
   }, [id]);
 
   const handleQuantityChange = (e) => {
     const value = parseInt(e.target.value);
-    if (value > 0 && value <= product?.qte_stock) {
+    if (value > 0 && value <= (product?.qte_stock || Infinity)) {
       setQuantity(value);
     }
   };
 
   const incrementQuantity = () => {
-    if (quantity < product?.qte_stock) {
+    if (quantity < (product?.qte_stock || Infinity)) {
       setQuantity(quantity + 1);
     }
   };
@@ -67,10 +84,50 @@ const ViewDetails = () => {
     }
   };
 
+  const handleAddToCart = async () => {
+    if (!user) {
+      setError('Please sign in to add items to your cart.');
+      setTimeout(() => {
+        navigate('/signin');
+      }, 1500);
+      return;
+    }
+
+    try {
+      setAddingToCart(true);
+      setError('');
+      setSuccess('');
+
+      const cartItem = {
+        name: product.name,
+        quantity: quantity,
+        price: product.price,
+        image: product.image
+      };
+
+      const result = cartService.addToCart(cartItem);
+
+      if (result.success) {
+        setSuccess('Item added to cart successfully!');
+        // Clear success message after 3 seconds
+        setTimeout(() => {
+          setSuccess('');
+        }, 3000);
+      } else {
+        setError(result.error || 'Error adding item to cart. Please try again.');
+      }
+    } catch (error) {
+      console.error('Add to cart error:', error);
+      setError('Error adding item to cart. Please try again.');
+    } finally {
+      setAddingToCart(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mt-5 text-center">
-        <div className="spinner-border text-primary" role="status">
+        <div className="spinner-border" role="status" style={{ color: '#ff4d4d' }}>
           <span className="visually-hidden">Loading...</span>
         </div>
         <p className="mt-3">Loading product details...</p>
@@ -96,15 +153,36 @@ const ViewDetails = () => {
       ? { text: "Low Stock", class: "text-warning" }
       : { text: "Out of Stock", class: "text-danger" };
 
+  // Ensure price is displayed correctly
+  const displayPrice = parseFloat(product.price).toFixed(2);
+
   return (
     <div className="container my-5">
       <nav aria-label="breadcrumb" className="mb-4">
         <ol className="breadcrumb">
           <li className="breadcrumb-item"><Link to="/">Home</Link></li>
-          <li className="breadcrumb-item"><Link to={`/category/${product.category.toLowerCase()}`}>{product.category}</Link></li>
+          <li className="breadcrumb-item">
+            <Link to={`/category/${typeof product.category === 'string' ? product.category.toLowerCase() : ''}`}>
+              {product.category}
+            </Link>
+          </li>
           <li className="breadcrumb-item active" aria-current="page">{product.name}</li>
         </ol>
       </nav>
+
+      {error && (
+        <div className="alert alert-danger alert-dismissible fade show" role="alert">
+          {error}
+          <button type="button" className="btn-close" onClick={() => setError('')}></button>
+        </div>
+      )}
+
+      {success && (
+        <div className="alert alert-success alert-dismissible fade show" role="alert">
+          {success}
+          <button type="button" className="btn-close" onClick={() => setSuccess('')}></button>
+        </div>
+      )}
 
       <div className="row">
         {/* Product Image */}
@@ -113,21 +191,34 @@ const ViewDetails = () => {
             className="bg-light rounded-4 d-flex align-items-center justify-content-center"
             style={{ height: "500px", overflow: "hidden" }}
           >
-            <img
-              src={product.image}
-              alt={product.name}
-              className="img-fluid rounded-4"
-              style={{ objectFit: "contain", maxHeight: "100%" }}
-            />
+            {product.image ? (
+              <img
+                src={product.image}
+                alt={product.name}
+                className="img-fluid rounded-4"
+                style={{ objectFit: "contain", maxHeight: "100%" }}
+                onError={(e) => {
+                  console.error('Image failed to load:', product.image);
+                  e.target.src = '/placeholder-image.jpg'; // Fallback image
+                }}
+              />
+            ) : (
+              <div className="text-center text-muted">
+                <i className="bi bi-image" style={{ fontSize: "5rem" }}></i>
+                <p>No image available</p>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Product Details */}
         <div className="col-md-6">
           <div className="mb-3">
-            <span className="badge bg-secondary mb-2">{product.category}</span>
+            <span className="badge bg-secondary mb-2">
+              {product.category}
+            </span>
             <h2 className="fw-bold mb-3">{product.name}</h2>
-            <p className="h3 mb-4">${product.price.toFixed(2)}</p>
+            <p className="h3 mb-4">${displayPrice}</p>
 
             <div className="mb-4">
               <h6 className="fw-bold mb-2">Description:</h6>
@@ -182,12 +273,19 @@ const ViewDetails = () => {
                   color: 'white',
                   borderRadius: '12px'
                 }}
-                disabled={product.qte_stock === 0}
+                disabled={product.qte_stock === 0 || addingToCart}
+                onClick={handleAddToCart}
               >
+                {addingToCart ? (
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                ) : null}
                 Add to Cart
               </button>
-              <button className="btn btn-outline-dark btn-lg">
-                <i className="bi bi-heart"></i>
+              <button
+                className="btn btn-outline-dark btn-lg"
+                onClick={() => navigate('/cart')}
+              >
+                <i className="bi bi-cart"></i> View Cart
               </button>
             </div>
           </div>
@@ -196,9 +294,9 @@ const ViewDetails = () => {
 
       <div className="mt-5">
         <h3 className="mb-4">You might also like</h3>
-        {/* Related products section would go here */}
+        {/* Related products section could be implemented here */}
         <div className="text-center mt-4">
-          <p>Related products carousel would appear here</p>
+          <p>Related products would appear here</p>
         </div>
       </div>
     </div>

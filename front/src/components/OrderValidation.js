@@ -1,82 +1,95 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import orderService from '../api/orderService';
+import { useAuth } from '../context/AuthContext';
 
 const OrderValidation = () => {
-    // Sample order data
-    const [orders, setOrders] = useState([
-        {
-            id: 2456,
-            customer: "Maria Rodriguez",
-            email: "maria.r@example.com",
-            date: "2025-04-10",
-            amount: 429.99,
-            status: "Pending",
-            paymentMethod: "Credit Card",
-            items: [
-                { id: 112, name: "Wireless Headphones", price: 199.99, quantity: 1 },
-                { id: 87, name: "Smart Watch", price: 230.00, quantity: 1 }
-            ],
-            shippingAddress: "123 Pine Street, Apt 4B, New York, NY 10001",
-            notes: "Please leave package at the door"
-        },
-        {
-            id: 2455,
-            customer: "David Johnson",
-            email: "david.j@example.com",
-            date: "2025-04-10",
-            amount: 89.95,
-            status: "Pending",
-            paymentMethod: "PayPal",
-            items: [
-                { id: 43, name: "Premium T-Shirt", price: 29.99, quantity: 2 },
-                { id: 65, name: "Baseball Cap", price: 29.97, quantity: 1 }
-            ],
-            shippingAddress: "456 Maple Avenue, Portland, OR 97201",
-            notes: ""
-        },
-        {
-            id: 2454,
-            customer: "Susan Williams",
-            email: "susan.w@example.com",
-            date: "2025-04-09",
-            amount: 1299.99,
-            status: "Pending",
-            paymentMethod: "Credit Card",
-            items: [
-                { id: 99, name: "Premium Laptop", price: 1299.99, quantity: 1 }
-            ],
-            shippingAddress: "789 Oak Drive, Austin, TX 78701",
-            notes: "Call before delivery"
-        },
-        {
-            id: 2453,
-            customer: "James Anderson",
-            email: "james.a@example.com",
-            date: "2025-04-09",
-            amount: 152.97,
-            status: "Pending",
-            paymentMethod: "Debit Card",
-            items: [
-                { id: 23, name: "Running Shoes", price: 89.99, quantity: 1 },
-                { id: 76, name: "Fitness Tracker", price: 62.98, quantity: 1 }
-            ],
-            shippingAddress: "321 Cedar Road, Chicago, IL 60601",
-            notes: ""
-        }
-    ]);
-
+    const { user } = useAuth();
+    const [orders, setOrders] = useState([]);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('Pending');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [sortBy, setSortBy] = useState('date');
+    const [sortOrder, setSortOrder] = useState('desc');
+
+    // Load orders on mount and when filters change
+    useEffect(() => {
+        const loadOrders = async () => {
+            try {
+                setLoading(true);
+                setError('');
+                const response = await orderService.getOrders({
+                    page,
+                    status: statusFilter,
+                    sortBy,
+                    sortOrder,
+                    search: searchTerm
+                });
+                setOrders(response.data.orders);
+                setTotalPages(response.data.totalPages);
+            } catch (error) {
+                setError('Error loading orders. Please try again.');
+                console.error('Orders error:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (user) {
+            loadOrders();
+        }
+    }, [user, page, statusFilter, sortBy, sortOrder, searchTerm]);
 
     // Handler for updating order status
-    const updateOrderStatus = (orderId, newStatus) => {
-        setOrders(orders.map(order =>
-            order.id === orderId ? { ...order, status: newStatus } : order
-        ));
+    const updateOrderStatus = async (orderId, newStatus) => {
+        try {
+            setLoading(true);
+            setError('');
+            setSuccess('');
+            const response = await orderService.updateOrderStatus(orderId, newStatus);
 
-        if (selectedOrder && selectedOrder.id === orderId) {
-            setSelectedOrder({ ...selectedOrder, status: newStatus });
+            setOrders(orders.map(order =>
+                order.id === orderId ? response.data : order
+            ));
+
+            if (selectedOrder && selectedOrder.id === orderId) {
+                setSelectedOrder({ ...selectedOrder, status: newStatus });
+            }
+
+            setSuccess(`Order #${orderId} status updated to ${newStatus}`);
+            setTimeout(() => setSuccess(''), 3000);
+        } catch (error) {
+            setError('Error updating order status. Please try again.');
+            console.error('Order update error:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Handler for deleting an order
+    const handleDeleteOrder = async (orderId) => {
+        if (!window.confirm('Are you sure you want to delete this order?')) {
+            return;
+        }
+
+        try {
+            setLoading(true);
+            setError('');
+            setSuccess('');
+            await orderService.deleteOrder(orderId);
+            setOrders(orders.filter(order => order.id !== orderId));
+            setSuccess(`Order #${orderId} deleted successfully`);
+            setTimeout(() => setSuccess(''), 3000);
+        } catch (error) {
+            setError('Error deleting order. Please try again.');
+            console.error('Order delete error:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -135,11 +148,39 @@ const OrderValidation = () => {
         </svg>
     );
 
+    // Sort handler
+    const handleSort = (field) => {
+        if (sortBy === field) {
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortBy(field);
+            setSortOrder('asc');
+        }
+    };
+
+    if (!user) {
+        return null;
+    }
+
     return (
         <div className="container-fluid py-4" style={{
             background: 'linear-gradient(135deg, #f8f9fa, #e9ecef)',
             minHeight: '100vh'
         }}>
+            {error && (
+                <div className="alert alert-danger alert-dismissible fade show" role="alert">
+                    {error}
+                    <button type="button" className="btn-close" onClick={() => setError('')}></button>
+                </div>
+            )}
+
+            {success && (
+                <div className="alert alert-success alert-dismissible fade show" role="alert">
+                    {success}
+                    <button type="button" className="btn-close" onClick={() => setSuccess('')}></button>
+                </div>
+            )}
+
             <div className="row">
                 <div className="col-md-3 mb-4">
                     <div className="card border-0" style={{
@@ -250,292 +291,125 @@ const OrderValidation = () => {
                 </div>
 
                 <div className="col-md-9">
-                    {selectedOrder ? (
-                        // Order Detail View
-                        <div className="card border-0" style={{
-                            background: 'rgba(255, 255, 255, 0.8)',
-                            backdropFilter: 'blur(10px)',
-                            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
-                            borderRadius: '16px'
-                        }}>
-                            <div className="card-body p-4">
-                                <div className="d-flex justify-content-between align-items-center mb-4">
-                                    <div className="d-flex align-items-center">
-                                        <button
-                                            onClick={() => setSelectedOrder(null)}
-                                            className="btn me-3"
-                                            style={{
-                                                background: 'rgba(236, 236, 236, 0.7)',
-                                                borderRadius: '50%',
-                                                width: '40px',
-                                                height: '40px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                border: 'none'
-                                            }}
-                                        >
-                                            <BackIcon />
-                                        </button>
-                                        <h4 className="fw-bold mb-0">Order #{selectedOrder.id}</h4>
-                                    </div>
-                                    <StatusBadge status={selectedOrder.status} />
-                                </div>
-
-                                <div className="row g-4">
-                                    <div className="col-md-6">
-                                        <div className="card border-0 h-100" style={{
-                                            background: 'rgba(236, 236, 236, 0.4)',
-                                            borderRadius: '12px'
-                                        }}>
-                                            <div className="card-body p-4">
-                                                <h5 className="fw-bold mb-3">Customer Information</h5>
-                                                <p className="mb-2"><strong>Name:</strong> {selectedOrder.customer}</p>
-                                                <p className="mb-2"><strong>Email:</strong> {selectedOrder.email}</p>
-                                                <p className="mb-4"><strong>Order Date:</strong> {selectedOrder.date}</p>
-
-                                                <h5 className="fw-bold mb-3">Shipping Information</h5>
-                                                <p className="mb-2"><strong>Address:</strong> {selectedOrder.shippingAddress}</p>
-                                                {selectedOrder.notes && (
-                                                    <p className="mb-0"><strong>Notes:</strong> {selectedOrder.notes}</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="col-md-6">
-                                        <div className="card border-0 h-100" style={{
-                                            background: 'rgba(236, 236, 236, 0.4)',
-                                            borderRadius: '12px'
-                                        }}>
-                                            <div className="card-body p-4">
-                                                <h5 className="fw-bold mb-3">Payment Information</h5>
-                                                <p className="mb-2"><strong>Method:</strong> {selectedOrder.paymentMethod}</p>
-                                                <p className="mb-2"><strong>Amount:</strong> ${selectedOrder.amount.toFixed(2)}</p>
-
-                                                <h5 className="fw-bold mt-4 mb-3">Order Items</h5>
-                                                {selectedOrder.items.map((item) => (
-                                                    <div key={item.id} className="d-flex justify-content-between align-items-center mb-2 pb-2" style={{ borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
-                                                        <div>
-                                                            <p className="fw-bold mb-0">{item.name}</p>
-                                                            <p className="text-muted mb-0">Qty: {item.quantity}</p>
-                                                        </div>
-                                                        <p className="fw-bold mb-0">${item.price.toFixed(2)}</p>
-                                                    </div>
-                                                ))}
-
-                                                <div className="d-flex justify-content-between mt-3">
-                                                    <h5 className="fw-bold">Total:</h5>
-                                                    <h5 className="fw-bold">${selectedOrder.amount.toFixed(2)}</h5>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="mt-4">
-                                    <h5 className="fw-bold mb-3">Validation Actions</h5>
-                                    <div className="d-flex flex-wrap gap-2">
-                                        <button
-                                            onClick={() => updateOrderStatus(selectedOrder.id, 'Validated')}
-                                            className="btn"
-                                            style={{
-                                                background: selectedOrder.status === 'Validated' ? '#8e44ad' : 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
-                                                color: 'white',
-                                                fontWeight: '500',
-                                                padding: '10px 20px',
-                                                borderRadius: '12px',
-                                                border: 'none',
-                                                opacity: selectedOrder.status === 'Validated' ? 0.7 : 1
-                                            }}
-                                            disabled={selectedOrder.status === 'Validated'}
-                                        >
-                                            {selectedOrder.status === 'Validated' ? 'Order Validated' : 'Validate Order'}
-                                        </button>
-
-                                        <button
-                                            onClick={() => updateOrderStatus(selectedOrder.id, 'Processing')}
-                                            className="btn"
-                                            style={{
-                                                background: selectedOrder.status === 'Processing' ? '#ffc107' : 'rgba(236, 236, 236, 0.7)',
-                                                color: selectedOrder.status === 'Processing' ? 'black' : '#333',
-                                                fontWeight: '500',
-                                                padding: '10px 20px',
-                                                borderRadius: '12px',
-                                                border: 'none',
-                                                opacity: selectedOrder.status === 'Processing' ? 0.7 : 1
-                                            }}
-                                            disabled={selectedOrder.status === 'Processing'}
-                                        >
-                                            {selectedOrder.status === 'Processing' ? 'Processing' : 'Mark as Processing'}
-                                        </button>
-
-                                        <button
-                                            onClick={() => updateOrderStatus(selectedOrder.id, 'Shipped')}
-                                            className="btn"
-                                            style={{
-                                                background: selectedOrder.status === 'Shipped' ? '#17a2b8' : 'rgba(236, 236, 236, 0.7)',
-                                                color: selectedOrder.status === 'Shipped' ? 'white' : '#333',
-                                                fontWeight: '500',
-                                                padding: '10px 20px',
-                                                borderRadius: '12px',
-                                                border: 'none',
-                                                opacity: selectedOrder.status === 'Shipped' ? 0.7 : 1
-                                            }}
-                                            disabled={selectedOrder.status === 'Shipped'}
-                                        >
-                                            {selectedOrder.status === 'Shipped' ? 'Shipped' : 'Mark as Shipped'}
-                                        </button>
-
-                                        <button
-                                            onClick={() => updateOrderStatus(selectedOrder.id, 'Cancelled')}
-                                            className="btn"
-                                            style={{
-                                                background: selectedOrder.status === 'Cancelled' ? '#dc3545' : 'rgba(236, 236, 236, 0.7)',
-                                                color: selectedOrder.status === 'Cancelled' ? 'white' : '#333',
-                                                fontWeight: '500',
-                                                padding: '10px 20px',
-                                                borderRadius: '12px',
-                                                border: 'none',
-                                                opacity: selectedOrder.status === 'Cancelled' ? 0.7 : 1
-                                            }}
-                                            disabled={selectedOrder.status === 'Cancelled'}
-                                        >
-                                            {selectedOrder.status === 'Cancelled' ? 'Cancelled' : 'Cancel Order'}
-                                        </button>
+                    <div className="card border-0" style={{
+                        background: 'rgba(255, 255, 255, 0.8)',
+                        backdropFilter: 'blur(10px)',
+                        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
+                        borderRadius: '16px'
+                    }}>
+                        <div className="card-body p-4">
+                            <div className="d-flex justify-content-between align-items-center mb-4">
+                                <h2 className="mb-0">Order Management</h2>
+                                <div className="d-flex gap-2">
+                                    <select
+                                        className="form-select"
+                                        value={statusFilter}
+                                        onChange={(e) => setStatusFilter(e.target.value)}
+                                    >
+                                        <option value="All">All Status</option>
+                                        <option value="Pending">Pending</option>
+                                        <option value="Processing">Processing</option>
+                                        <option value="Shipped">Shipped</option>
+                                        <option value="Delivered">Delivered</option>
+                                        <option value="Cancelled">Cancelled</option>
+                                    </select>
+                                    <div className="input-group">
+                                        <span className="input-group-text">
+                                            <SearchIcon />
+                                        </span>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            placeholder="Search orders..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                        />
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    ) : (
-                        // Orders List View
-                        <div className="card border-0" style={{
-                            background: 'rgba(255, 255, 255, 0.8)',
-                            backdropFilter: 'blur(10px)',
-                            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
-                            borderRadius: '16px'
-                        }}>
-                            <div className="card-body p-4">
-                                <h4 className="fw-bold mb-4">Order Validation</h4>
 
-                                <div className="row g-3 mb-4">
-                                    <div className="col-md-6">
-                                        <div className="position-relative">
-                                            <input
-                                                type="text"
-                                                className="form-control ps-5"
-                                                placeholder="Search by customer name or order ID"
-                                                value={searchTerm}
-                                                onChange={(e) => setSearchTerm(e.target.value)}
-                                                style={{
-                                                    background: 'rgba(236, 236, 236, 0.7)',
-                                                    border: 'none',
-                                                    borderRadius: '12px',
-                                                    padding: '12px 20px'
-                                                }}
-                                            />
-                                            <div style={{
-                                                position: 'absolute',
-                                                left: '15px',
-                                                top: '50%',
-                                                transform: 'translateY(-50%)',
-                                                color: '#6c757d'
-                                            }}>
-                                                <SearchIcon />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="col-md-6">
-                                        <select
-                                            className="form-select"
-                                            value={statusFilter}
-                                            onChange={(e) => setStatusFilter(e.target.value)}
-                                            style={{
-                                                background: 'rgba(236, 236, 236, 0.7)',
-                                                border: 'none',
-                                                borderRadius: '12px',
-                                                padding: '12px 20px'
-                                            }}
-                                        >
-                                            <option value="All">All Statuses</option>
-                                            <option value="Pending">Pending</option>
-                                            <option value="Validated">Validated</option>
-                                            <option value="Processing">Processing</option>
-                                            <option value="Shipped">Shipped</option>
-                                            <option value="Delivered">Delivered</option>
-                                            <option value="Cancelled">Cancelled</option>
-                                        </select>
+                            {loading ? (
+                                <div className="text-center py-4">
+                                    <div className="spinner-border text-primary" role="status">
+                                        <span className="visually-hidden">Loading...</span>
                                     </div>
                                 </div>
-
+                            ) : filteredOrders.length === 0 ? (
+                                <div className="text-center py-4">
+                                    <p className="text-muted">No orders found.</p>
+                                </div>
+                            ) : (
                                 <div className="table-responsive">
                                     <table className="table">
                                         <thead>
                                             <tr>
-                                                <th scope="col">Order ID</th>
-                                                <th scope="col">Customer</th>
-                                                <th scope="col">Date</th>
-                                                <th scope="col">Amount</th>
-                                                <th scope="col">Status</th>
-                                                <th scope="col">Actions</th>
+                                                <th>Order ID</th>
+                                                <th>Customer</th>
+                                                <th>Date</th>
+                                                <th>Amount</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {filteredOrders.map((order) => (
                                                 <tr key={order.id}>
-                                                    <td>#{order.id}</td>
+                                                    <td>{order.id}</td>
                                                     <td>{order.customer}</td>
-                                                    <td>{order.date}</td>
+                                                    <td>{new Date(order.date).toLocaleDateString()}</td>
                                                     <td>${order.amount.toFixed(2)}</td>
-                                                    <td>
-                                                        <StatusBadge status={order.status} />
-                                                    </td>
+                                                    <td><StatusBadge status={order.status} /></td>
                                                     <td>
                                                         <div className="d-flex gap-2">
                                                             <button
+                                                                className="btn btn-sm btn-primary"
                                                                 onClick={() => setSelectedOrder(order)}
-                                                                className="btn btn-sm"
-                                                                style={{
-                                                                    background: 'rgba(236, 236, 236, 0.7)',
-                                                                    color: '#333',
-                                                                    fontWeight: '500',
-                                                                    borderRadius: '8px',
-                                                                    border: 'none'
-                                                                }}
+                                                                disabled={loading}
                                                             >
                                                                 View Details
                                                             </button>
-                                                            {order.status === 'Pending' && (
-                                                                <button
-                                                                    onClick={() => updateOrderStatus(order.id, 'Validated')}
-                                                                    className="btn btn-sm"
-                                                                    style={{
-                                                                        background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
-                                                                        color: 'white',
-                                                                        fontWeight: '500',
-                                                                        borderRadius: '8px',
-                                                                        border: 'none'
-                                                                    }}
-                                                                >
-                                                                    Validate
-                                                                </button>
-                                                            )}
+                                                            <button
+                                                                className="btn btn-sm btn-success"
+                                                                onClick={() => updateOrderStatus(order.id, 'Validated')}
+                                                                disabled={loading || order.status === 'Validated'}
+                                                            >
+                                                                Validate
+                                                            </button>
                                                         </div>
                                                     </td>
                                                 </tr>
                                             ))}
                                         </tbody>
                                     </table>
-
-                                    {filteredOrders.length === 0 && (
-                                        <div className="text-center py-4">
-                                            <p className="text-muted mb-0">No orders match your filter criteria</p>
-                                        </div>
-                                    )}
                                 </div>
+                            )}
+
+                            {/* Pagination */}
+                            <div className="d-flex justify-content-center mt-4">
+                                <nav>
+                                    <ul className="pagination">
+                                        <li className={`page-item ${page === 1 ? 'disabled' : ''}`}>
+                                            <button className="page-link" onClick={() => setPage(page - 1)}>
+                                                Previous
+                                            </button>
+                                        </li>
+                                        {[...Array(totalPages)].map((_, i) => (
+                                            <li key={i} className={`page-item ${page === i + 1 ? 'active' : ''}`}>
+                                                <button className="page-link" onClick={() => setPage(i + 1)}>
+                                                    {i + 1}
+                                                </button>
+                                            </li>
+                                        ))}
+                                        <li className={`page-item ${page === totalPages ? 'disabled' : ''}`}>
+                                            <button className="page-link" onClick={() => setPage(page + 1)}>
+                                                Next
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </nav>
                             </div>
                         </div>
-                    )}
+                    </div>
                 </div>
             </div>
         </div>

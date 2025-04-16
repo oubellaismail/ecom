@@ -9,7 +9,6 @@ export const registerUser = async (userData) => {
       ? { message: Object.values(error.response.data.errors).flat().join(', ') }
       : error.response?.data || { message: 'Network Error' };
   }
-
 };
 
 export const requestPasswordReset = async (email) => {
@@ -46,6 +45,7 @@ export const loginUser = async (credentials) => {
     // Store the access_token for the new authorization header system
     if (response.data.access_token) {
       localStorage.setItem('access_token', response.data.access_token);
+
     }
 
     // Return the full response data with tokens and user info
@@ -59,9 +59,25 @@ export const loginUser = async (credentials) => {
   }
 };
 
-export const logoutUser = () => {
-  localStorage.removeItem('authToken');
+export const logoutUser = async () => {
+  try {
+    await axiosInstance.post('/logout');
+    // Clear all auth-related items from localStorage
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('is_admin');
+    return true;
+  } catch (error) {
+    // Even if the API call fails, clear the local storage
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('is_admin');
+    throw error.response?.data || { message: 'Logout failed' };
+  }
 };
+
 export const AddProducts = async (userData) => {
 
 

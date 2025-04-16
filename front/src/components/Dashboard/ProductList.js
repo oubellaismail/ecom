@@ -92,12 +92,27 @@ const ProductRow = ({ product, handleEdit, handleDelete, loading }) => {
     // Get the identifier (slug or id) to use for actions
     const productId = product.slug || product.id;
 
+    // Handle the product image display properly
+    const getImageSource = () => {
+        if (!product.product_image) {
+            return '/placeholder-image.jpg';
+        }
+
+        // Handle if product_image is an object with preview property
+        if (typeof product.product_image === 'object' && product.product_image.preview) {
+            return product.product_image.preview;
+        }
+
+        // Handle if product_image is a string (URL)
+        return product.product_image;
+    };
+
     return (
         <tr>
             <td>
                 <div style={{ width: '50px', height: '50px' }}>
                     <img
-                        src={product.product_image || '/placeholder-image.jpg'}
+                        src={getImageSource()}
                         alt={product.name}
                         className="rounded"
                         style={{
@@ -151,3 +166,56 @@ const ProductRow = ({ product, handleEdit, handleDelete, loading }) => {
 };
 
 export default ProductList;
+
+// You'll also need to modify the parent component that manages the state and API calls
+// Here's a sample implementation for the handleSubmit method in your parent component
+
+/*
+const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+        // Create a new FormData object for the API request
+        const productData = new FormData();
+        
+        // Add all basic fields
+        productData.append('name', formData.name);
+        productData.append('category_slug', formData.category_slug);
+        productData.append('price', formData.price);
+        productData.append('qty_in_stock', formData.qty_in_stock);
+        productData.append('description', formData.description);
+        
+        // Handle image properly
+        if (formData.product_image) {
+            if (typeof formData.product_image === 'object' && formData.product_image.file) {
+                // If it's a File object from input
+                productData.append('product_image', formData.product_image.file);
+            } else if (typeof formData.product_image === 'string') {
+                // If it's a URL string (like in edit mode and image wasn't changed)
+                productData.append('product_image_url', formData.product_image);
+            }
+        }
+        
+        let response;
+        if (isEditing) {
+            // Update existing product
+            response = await api.put(`/products/${editingProductId}`, productData);
+        } else {
+            // Create new product
+            response = await api.post('/products', productData);
+        }
+        
+        if (response.status === 200 || response.status === 201) {
+            setSuccessMessage(isEditing ? 'Product updated successfully!' : 'Product added successfully!');
+            resetForm();
+            fetchProducts(); // Refresh product list
+            setActiveTab('products');
+        }
+    } catch (error) {
+        setErrorMessage(error.response?.data?.message || 'An error occurred');
+    } finally {
+        setLoading(false);
+    }
+};
+*/

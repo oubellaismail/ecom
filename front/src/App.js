@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import SignIn from './components/SignIn';
 import SignUp from './components/SignUp';
@@ -30,7 +31,6 @@ function HomePage() {
       <FeaturedProducts />
       <NewArrivals />
       <BenefitsSection />
-
       <NewsletterAndTrust />
     </>
   );
@@ -38,26 +38,28 @@ function HomePage() {
 
 function App() {
   return (
-    <Router>
-      <Navbar />
-      <Routes>
-        <Route path="/signin" element={<SignIn />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/order" element={<OrderValidation />} />
-        <Route path="/discount" element={<DiscountCoupons />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/" element={<HomePage />} />
-        <Route path="/cart" element={<Cart />} />
-        <Route path="/checkout" element={<Checkout />} />
-        <Route path="/AdminDashboard" element={<AdminDashboard />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/edit-profile" element={<EditProfile />} />
-        <Route path="/product/:id" element={<ViewDetails />} />
-      </Routes>
-      <Footer />
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Navbar />
+        <Routes>
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route path="/order" element={<OrderValidation />} />
+          <Route path="/discount" element={<DiscountCoupons />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/AdminDashboard" element={<AdminDashboard />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/edit-profile" element={<EditProfile />} />
+          <Route path="/product/:id" element={<ViewDetails />} />
+        </Routes>
+        <Footer />
+      </Router>
+    </AuthProvider>
   );
 }
 

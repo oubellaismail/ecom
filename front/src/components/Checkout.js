@@ -1,5 +1,10 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import addressService from '../api/addressService';
+import orderService from '../api/orderService';
+import countryService from '../api/countryService';
+import cartService from '../api/cartService';
+import { useAuth } from '../context/AuthContext';
 
 const Checkout = () => {
   const [formData, setFormData] = useState({
@@ -9,8 +14,109 @@ const Checkout = () => {
     city: '',
     postalCode: '',
     country: '',
-    paymentMethod: 'credit'
+    paymentMethod: 'cod' // Default to COD
   });
+  const [countries, setCountries] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [cartItems, setCartItems] = useState([]);
+  const [orderSummary, setOrderSummary] = useState({
+    subtotal: 0,
+    shipping: 15,
+    tax: 0,
+    discount: 0,
+    total: 0
+  });
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Load cart items from localStorage
+        const items = cartService.getCart();
+        if (!items || items.length === 0) {
+          setError('Your cart is empty. Please add items before checkout.');
+          return;
+        }
+        setCartItems(items);
+
+        // Calculate order summary
+        const subtotal = items.reduce((acc, item) => acc + (parseFloat(item.price) * item.quantity), 0);
+        const tax = subtotal * 0.1;
+        const total = subtotal + orderSummary.shipping + tax - orderSummary.discount;
+
+        setOrderSummary(prev => ({
+          ...prev,
+          subtotal,
+          tax,
+          total
+        }));
+
+        // Load countries from API
+        console.log('Fetching countries from API...');
+        const countriesResponse = await countryService.getCountries();
+        console.log('Countries API Response:', countriesResponse);
+
+        if (countriesResponse && countriesResponse.data) {
+          console.log('Raw countries data:', countriesResponse.data);
+          // Convert object to array format
+          const formattedCountries = Object.entries(countriesResponse.data).map(([code, name]) => ({
+            code,
+            name
+          }));
+          console.log('Formatted countries:', formattedCountries);
+          setCountries(formattedCountries);
+        } else {
+          console.warn('No countries data received from API');
+          setCountries([]);
+        }
+
+        // Load user's default address if exists
+        if (user) {
+          try {
+            console.log('Fetching user default address...');
+            const addressResponse = await addressService.getDefaultAddress();
+            console.log('Address API Response:', addressResponse);
+
+            if (addressResponse && addressResponse.data) {
+              const { full_name, email, street, city, postal_code, country_code } = addressResponse.data;
+              console.log('User address data:', {
+                full_name, email, street, city, postal_code, country_code
+              });
+              setFormData(prev => ({
+                ...prev,
+                fullName: full_name || '',
+                email: email || '',
+                address: street || '',
+                city: city || '',
+                postalCode: postal_code || '',
+                country: country_code || ''
+              }));
+            }
+          } catch (addressError) {
+            console.error('Error loading address:', addressError);
+            // Continue without address data
+          }
+        }
+      } catch (error) {
+        console.error('Checkout data error:', error);
+        setError('Error loading checkout data. Please try again.');
+      }
+    };
+
+    loadData();
+  }, [user]);
+
+  // Add a useEffect to monitor countries state changes
+  useEffect(() => {
+    console.log('Countries state updated:', countries);
+  }, [countries]);
+
+  // Add a useEffect to monitor formData state changes
+  useEffect(() => {
+    console.log('FormData state updated:', formData);
+  }, [formData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -20,36 +126,65 @@ const Checkout = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Process checkout logic here
-    console.log('Order submitted:', formData);
+    if (!user) {
+      navigate('/signin');
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      setError('Your cart is empty. Please add items before checkout.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      // Save address
+      const addressData = {
+        full_name: formData.fullName,
+        email: formData.email,
+        street: formData.address,
+        city: formData.city,
+        postal_code: formData.postalCode,
+        country_code: formData.country,
+        is_default: true
+      };
+      console.log('Submitting address data:', addressData);
+
+      const addressResponse = await addressService.createAddress(addressData);
+      console.log('Address creation response:', addressResponse);
+
+      // Create order
+      const orderData = {
+        items: cartItems.map(item => ({
+          product_name: item.name,
+          quantity: item.quantity,
+          price: item.price
+        })),
+        shipping_address_id: addressResponse.data.id,
+        payment_method: formData.paymentMethod,
+        total_amount: orderSummary.total
+      };
+      console.log('Submitting order data:', orderData);
+
+      const orderResponse = await orderService.placeOrder(orderData);
+      console.log('Order creation response:', orderResponse);
+
+      // Clear cart
+      cartService.clearCart();
+
+      // Navigate to success page
+      navigate(`/checkout/success?order_id=${orderResponse.data.id}`);
+    } catch (error) {
+      console.error('Checkout error:', error);
+      setError('Error processing your order. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
-
-  // Sample order items
-  const items = [
-    {
-      id: 1,
-      name: 'TX-8 Two-Way Radio',
-      price: 149.99,
-      quantity: 1,
-      image: '/images/a1.png'
-    },
-    {
-      id: 2,
-      name: 'ZA-758 PMR UHF HANDHELD TRANSCEIVER',
-      price: 299.99,
-      quantity: 2,
-      image: '/images/a2.png'
-    },
-  ];
-
-  // Calculate totals
-  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const shipping = 15;
-  const tax = subtotal * 0.1; // 10% tax
-  const discount = 45.99;
-  const total = subtotal + shipping + tax - discount;
 
   return (
     <section className="py-5" style={{
@@ -60,6 +195,8 @@ const Checkout = () => {
           <h2 className="fw-bold mb-2">Checkout</h2>
           <p className="text-muted">Complete your purchase</p>
         </div>
+
+        {error && <div className="alert alert-danger">{error}</div>}
 
         <div className="row g-4">
           {/* Left column: Form */}
@@ -197,135 +334,136 @@ const Checkout = () => {
                       required
                     >
                       <option value="">Select Country</option>
-                      <option value="US">United States</option>
-                      <option value="UK">United Kingdom</option>
-                      <option value="CA">Canada</option>
-                      <option value="AU">Australia</option>
+                      {countries.map(country => (
+                        <option key={country.code} value={country.code}>
+                          {country.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
+
+                  <div className="card border-0" style={{
+                    borderRadius: '16px',
+                    overflow: 'hidden',
+                    boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
+                  }}>
+                    <div className="card-body p-4">
+                      <h5 className="fw-bold mb-4">Payment Method</h5>
+
+                      <div className="mb-3">
+                        <div className="form-check d-flex align-items-center mb-3 p-3" style={{
+                          borderRadius: '12px',
+                          background: formData.paymentMethod === 'cod' ? 'rgba(255, 77, 77, 0.1)' : 'rgba(236, 236, 236, 0.7)',
+                          border: formData.paymentMethod === 'cod' ? '1px solid rgba(255, 77, 77, 0.3)' : 'none'
+                        }}>
+                          <input
+                            className="form-check-input me-3"
+                            type="radio"
+                            name="paymentMethod"
+                            id="cod"
+                            value="cod"
+                            checked={formData.paymentMethod === 'cod'}
+                            onChange={handleChange}
+                          />
+                          <label className="form-check-label d-flex align-items-center w-100" htmlFor="cod">
+                            <div>
+                              <div className="fw-bold">Cash on Delivery (COD)</div>
+                              <div className="text-muted" style={{ fontSize: '0.9rem' }}>Pay when you receive your order</div>
+                            </div>
+                          </label>
+                        </div>
+
+                        <div className="form-check d-flex align-items-center mb-3 p-3" style={{
+                          borderRadius: '12px',
+                          background: formData.paymentMethod === 'paypal' ? 'rgba(255, 77, 77, 0.1)' : 'rgba(236, 236, 236, 0.7)',
+                          border: formData.paymentMethod === 'paypal' ? '1px solid rgba(255, 77, 77, 0.3)' : 'none'
+                        }}>
+                          <input
+                            className="form-check-input me-3"
+                            type="radio"
+                            name="paymentMethod"
+                            id="paypal"
+                            value="paypal"
+                            checked={formData.paymentMethod === 'paypal'}
+                            onChange={handleChange}
+                          />
+                          <label className="form-check-label d-flex align-items-center w-100" htmlFor="paypal">
+                            <div>
+                              <div className="fw-bold">PayPal</div>
+                              <div className="text-muted" style={{ fontSize: '0.9rem' }}>Pay securely with PayPal</div>
+                            </div>
+                            <div className="ms-auto">
+                              <img src="/paypal-logo.png" alt="PayPal" style={{ height: '25px' }} />
+                            </div>
+                          </label>
+                        </div>
+
+                        <div className="form-check d-flex align-items-center p-3" style={{
+                          borderRadius: '12px',
+                          background: formData.paymentMethod === 'stripe' ? 'rgba(255, 77, 77, 0.1)' : 'rgba(236, 236, 236, 0.7)',
+                          border: formData.paymentMethod === 'stripe' ? '1px solid rgba(255, 77, 77, 0.3)' : 'none'
+                        }}>
+                          <input
+                            className="form-check-input me-3"
+                            type="radio"
+                            name="paymentMethod"
+                            id="stripe"
+                            value="stripe"
+                            checked={formData.paymentMethod === 'stripe'}
+                            onChange={handleChange}
+                          />
+                          <label className="form-check-label d-flex align-items-center w-100" htmlFor="stripe">
+                            <div>
+                              <div className="fw-bold">Credit / Debit Card</div>
+                              <div className="text-muted" style={{ fontSize: '0.9rem' }}>Pay securely with your card</div>
+                            </div>
+                            <div className="ms-auto">
+                              <svg width="40" height="25" viewBox="0 0 40 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect width="40" height="25" rx="4" fill="#1A1F71" />
+                                <path fillRule="evenodd" clipRule="evenodd" d="M15.3 16.0H13.9L12.8 12.9C12.7 12.6 12.6 12.4 12.4 12.2C12 11.8 11.4 11.5 10.7 11.5C10.6 11.5 10.4 11.5 10.3 11.5L8.3 16.0H6.8L9.9 9.0H11.4L12.4 11.4C12.7 12.0 12.9 12.6 13.1 13L15.3 16.0Z" fill="#FFFFFF" />
+                                <path fillRule="evenodd" clipRule="evenodd" d="M16.4 13.4C16.4 11.9 17.6 10.8 19.1 10.8C20.6 10.8 21.8 11.9 21.8 13.4C21.8 14.9 20.6 16.0 19.1 16.0C17.6 16.0 16.4 14.9 16.4 13.4Z" fill="#FFFFFF" />
+                                <path fillRule="evenodd" clipRule="evenodd" d="M27.6 10.9L26.2 14.0C26.0 14.4 25.8 14.9 25.6 15.3L22.9 10.9H21.5L25.2 16.0H26.7L30.4 10.9H28.9H27.6Z" fill="#FFFFFF" />
+                              </svg>
+                            </div>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn w-100 mt-4"
+                    style={{
+                      background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
+                      color: 'white',
+                      fontWeight: '500',
+                      padding: '0.75rem',
+                      borderRadius: '12px',
+                      boxShadow: '0 4px 15px rgba(255, 77, 77, 0.2)'
+                    }}
+                    disabled={loading || cartItems.length === 0}
+                  >
+                    {loading ? 'Processing...' : 'Place Order'}
+                  </button>
                 </form>
               </div>
             </div>
+          </div>
 
+          {/* Right column: Order Summary */}
+          <div className="col-lg-5">
             <div className="card border-0" style={{
               borderRadius: '16px',
               overflow: 'hidden',
               boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
             }}>
               <div className="card-body p-4">
-                <h5 className="fw-bold mb-4">Payment Method</h5>
-
-                <div className="mb-3">
-                  <div className="form-check d-flex align-items-center mb-3 p-3" style={{
-                    borderRadius: '12px',
-                    background: formData.paymentMethod === 'credit' ? 'rgba(255, 77, 77, 0.1)' : 'rgba(236, 236, 236, 0.7)',
-                    border: formData.paymentMethod === 'credit' ? '1px solid rgba(255, 77, 77, 0.3)' : 'none'
-                  }}>
-                    <input
-                      className="form-check-input me-3"
-                      type="radio"
-                      name="paymentMethod"
-                      id="creditCard"
-                      value="credit"
-                      checked={formData.paymentMethod === 'credit'}
-                      onChange={handleChange}
-                    />
-                    <label className="form-check-label d-flex align-items-center w-100" htmlFor="creditCard">
-                      <div>
-                        <div className="fw-bold">Credit / Debit Card</div>
-                        <div className="text-muted" style={{ fontSize: '0.9rem' }}>Pay securely with your card</div>
-                      </div>
-                      <div className="ms-auto">
-                        <svg width="40" height="25" viewBox="0 0 40 25" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <rect width="40" height="25" rx="4" fill="#1A1F71" />
-                          <path fillRule="evenodd" clipRule="evenodd" d="M15.3 16.0H13.9L12.8 12.9C12.7 12.6 12.6 12.4 12.4 12.2C12 11.8 11.4 11.5 10.7 11.5C10.6 11.5 10.4 11.5 10.3 11.5L8.3 16.0H6.8L9.9 9.0H11.4L12.4 11.4C12.7 12.0 12.9 12.6 13.1 13L15.3 16.0Z" fill="#FFFFFF" />
-                          <path fillRule="evenodd" clipRule="evenodd" d="M16.4 13.4C16.4 11.9 17.6 10.8 19.1 10.8C20.6 10.8 21.8 11.9 21.8 13.4C21.8 14.9 20.6 16.0 19.1 16.0C17.6 16.0 16.4 14.9 16.4 13.4Z" fill="#FFFFFF" />
-                          <path fillRule="evenodd" clipRule="evenodd" d="M27.6 10.9L26.2 14.0C26.0 14.4 25.8 14.9 25.6 15.3L22.9 10.9H21.5L25.2 16.0H26.7L30.4 10.9H28.9H27.6Z" fill="#FFFFFF" />
-                        </svg>
-                      </div>
-                    </label>
-                  </div>
-
-                  <div className="form-check d-flex align-items-center p-3" style={{
-                    borderRadius: '12px',
-                    background: formData.paymentMethod === 'paypal' ? 'rgba(255, 77, 77, 0.1)' : 'rgba(236, 236, 236, 0.7)',
-                    border: formData.paymentMethod === 'paypal' ? '1px solid rgba(255, 77, 77, 0.3)' : 'none'
-                  }}>
-                    <input
-                      className="form-check-input me-3"
-                      type="radio"
-                      name="paymentMethod"
-                      id="paypal"
-                      value="paypal"
-                      checked={formData.paymentMethod === 'paypal'}
-                      onChange={handleChange}
-                    />
-                    <label className="form-check-label d-flex align-items-center w-100" htmlFor="paypal">
-                      <div>
-                        <div className="fw-bold">PayPal</div>
-                        <div className="text-muted" style={{ fontSize: '0.9rem' }}>Pay with your PayPal account</div>
-                      </div>
-                      <div className="ms-auto">
-                        <svg width="40" height="25" viewBox="0 0 40 25" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <rect width="40" height="25" rx="4" fill="#FFFFFF" />
-                          <path d="M29.4 11.2C29.4 13.3 28.1 14.7 26.1 14.7H24.5C24.3 14.7 24.1 14.9 24.1 15.1L23.6 18.1C23.6 18.2 23.5 18.4 23.3 18.4H20.9C20.7 18.4 20.6 18.3 20.6 18.1L22.2 7.5C22.2 7.3 22.4 7.2 22.6 7.2H26.6C28.2 7.2 29.4 8.6 29.4 10.3V11.2Z" fill="#003087" />
-                          <path d="M16.4 11.2C16.4 13.3 15.1 14.7 13.1 14.7H11.5C11.3 14.7 11.1 14.9 11.1 15.1L10.6 18.1C10.6 18.2 10.5 18.4 10.3 18.4H7.9C7.7 18.4 7.6 18.3 7.6 18.1L9.2 7.5C9.2 7.3 9.4 7.2 9.6 7.2H13.6C15.2 7.2 16.4 8.6 16.4 10.3V11.2Z" fill="#0070E0" />
-                        </svg>
-                      </div>
-                    </label>
-                  </div>
-                  <div className="form-check d-flex align-items-center p-3" style={{
-                    borderRadius: '12px',
-                    background: formData.paymentMethod === 'paypal' ? 'rgba(255, 77, 77, 0.1)' : 'rgba(236, 236, 236, 0.7)',
-                    border: formData.paymentMethod === 'paypal' ? '1px solid rgba(255, 77, 77, 0.3)' : 'none'
-                  }}>
-                    <input
-                      className="form-check-input me-3"
-                      type="radio"
-                      name="paymentMethod"
-                      id="paypal"
-                      value="paypal"
-                      checked={formData.paymentMethod === 'paypal'}
-                      onChange={handleChange}
-                    />
-                    <label className="form-check-label d-flex align-items-center w-100" htmlFor="paypal">
-                      <div>
-                        <div className="fw-bold">COD</div>
-                        <div className="text-muted" style={{ fontSize: '0.9rem' }}>Pay Cash on Delivery</div>
-                      </div>
-                      <div className="ms-auto">
-                        <svg width="40" height="25" viewBox="0 0 40 25" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <rect width="40" height="25" rx="4" fill="#FFFFFF" />
-                          <path d="M29.4 11.2C29.4 13.3 28.1 14.7 26.1 14.7H24.5C24.3 14.7 24.1 14.9 24.1 15.1L23.6 18.1C23.6 18.2 23.5 18.4 23.3 18.4H20.9C20.7 18.4 20.6 18.3 20.6 18.1L22.2 7.5C22.2 7.3 22.4 7.2 22.6 7.2H26.6C28.2 7.2 29.4 8.6 29.4 10.3V11.2Z" fill="#003087" />
-                          <path d="M16.4 11.2C16.4 13.3 15.1 14.7 13.1 14.7H11.5C11.3 14.7 11.1 14.9 11.1 15.1L10.6 18.1C10.6 18.2 10.5 18.4 10.3 18.4H7.9C7.7 18.4 7.6 18.3 7.6 18.1L9.2 7.5C9.2 7.3 9.4 7.2 9.6 7.2H13.6C15.2 7.2 16.4 8.6 16.4 10.3V11.2Z" fill="#0070E0" />
-                        </svg>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
-
-              </div>
-            </div>
-          </div>
-
-          {/* Right column: Order summary */}
-          <div className="col-lg-5">
-            <div className="card border-0 mb-4" style={{
-              borderRadius: '16px',
-              overflow: 'hidden',
-              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
-              position: 'sticky',
-              top: '20px'
-            }}>
-              <div className="card-body p-4">
                 <h5 className="fw-bold mb-4">Order Summary</h5>
 
-                {items.map((item) => (
-                  <div key={item.id} className="d-flex align-items-center mb-3 pb-3" style={{
-                    borderBottom: item.id !== items[items.length - 1].id ? '1px solid rgba(0,0,0,0.1)' : 'none'
-                  }}>
-                    <div style={{ width: '60px', height: '60px' }}>
+                {cartItems.map((item) => (
+                  <div key={item.id} className="d-flex align-items-center mb-3">
+                    <div style={{ width: '60px', height: '60px', marginRight: '1rem' }}>
                       <img
                         src={item.image}
                         alt={item.name}
@@ -333,80 +471,43 @@ const Checkout = () => {
                         style={{
                           width: '100%',
                           height: '100%',
-                          objectFit: 'cover',
-                          borderRadius: '8px'
+                          objectFit: 'cover'
                         }}
                       />
                     </div>
-                    <div className="ms-3 flex-grow-1">
-                      <h6 className="mb-0">{item.name}</h6>
-                      <small className="text-muted">Qty: {item.quantity}</small>
-                    </div>
-                    <div className="ms-auto fw-bold">
-                      ${(item.price * item.quantity).toFixed(2)}
+                    <div className="flex-grow-1">
+                      <h6 className="mb-1">{item.name}</h6>
+                      <div className="d-flex justify-content-between">
+                        <span className="text-muted">Qty: {item.quantity}</span>
+                        <span className="fw-bold">${(item.price * item.quantity).toFixed(2)}</span>
+                      </div>
                     </div>
                   </div>
                 ))}
 
-                <div className="mt-4">
+                <div className="border-top pt-3 mt-3">
                   <div className="d-flex justify-content-between mb-2">
                     <span className="text-muted">Subtotal</span>
-                    <span>${subtotal.toFixed(2)}</span>
+                    <span>${orderSummary.subtotal.toFixed(2)}</span>
                   </div>
                   <div className="d-flex justify-content-between mb-2">
                     <span className="text-muted">Shipping</span>
-                    <span>${shipping.toFixed(2)}</span>
+                    <span>${orderSummary.shipping.toFixed(2)}</span>
                   </div>
                   <div className="d-flex justify-content-between mb-2">
-                    <span className="text-muted">Tax</span>
-                    <span>${tax.toFixed(2)}</span>
+                    <span className="text-muted">Tax (10%)</span>
+                    <span>${orderSummary.tax.toFixed(2)}</span>
                   </div>
-                  <div className="d-flex justify-content-between mb-3" style={{ color: '#ff4d4d' }}>
-                    <span>Discount</span>
-                    <span>-${discount.toFixed(2)}</span>
+                  {orderSummary.discount > 0 && (
+                    <div className="d-flex justify-content-between mb-2" style={{ color: '#ff4d4d' }}>
+                      <span>Discount</span>
+                      <span>-${orderSummary.discount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="d-flex justify-content-between fw-bold mt-3 pt-2 border-top">
+                    <span>Total</span>
+                    <span>${orderSummary.total.toFixed(2)}</span>
                   </div>
-                  <div className="d-flex justify-content-between pt-3 border-top">
-                    <span className="fw-bold">Total</span>
-                    <span className="fw-bold" style={{ fontSize: '1.2rem' }}>
-                      ${total.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <button
-                    type="submit"
-                    className="btn w-100 mb-3"
-                    onClick={handleSubmit}
-                    style={{
-                      background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
-                      color: 'white',
-                      fontWeight: '500',
-                      padding: '12px',
-                      borderRadius: '12px',
-                      boxShadow: '0 4px 15px rgba(255, 77, 77, 0.2)'
-                    }}
-                  >
-                    Place Order
-                  </button>
-                  <Link to="/cart" className="btn btn-outline-dark w-100" style={{
-                    borderRadius: '12px',
-                    padding: '12px',
-                    fontWeight: '500'
-                  }}>
-                    Return to Cart
-                  </Link>
-                </div>
-
-                <div className="mt-4 d-flex align-items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-success">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                  </svg>
-                  <span className="ms-2 text-muted" style={{ fontSize: '0.9rem' }}>
-                    Your personal data will be used to process your order, support
-                    your experience, and for other purposes described in our privacy policy.
-                  </span>
                 </div>
               </div>
             </div>

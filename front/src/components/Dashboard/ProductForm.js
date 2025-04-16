@@ -1,6 +1,26 @@
 import React from 'react';
 
 const ProductForm = ({ formData, handleChange, handleSubmit, isEditing, resetForm, setActiveTab, errorMessage, successMessage, loading, categories }) => {
+    // Add a specific handler for file uploads
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Create a URL for the file preview
+            const fileUrl = URL.createObjectURL(file);
+
+            // Update formData with both the file and the URL for preview
+            handleChange({
+                target: {
+                    name: 'product_image',
+                    value: {
+                        file: file,
+                        preview: fileUrl
+                    }
+                }
+            });
+        }
+    };
+
     return (
         <div className="card border-0" style={{
             background: 'rgba(255, 255, 255, 0.8)',
@@ -123,7 +143,7 @@ const ProductForm = ({ formData, handleChange, handleSubmit, isEditing, resetFor
                             name="product_image"
                             className="form-control"
                             accept="image/*"
-                            onChange={handleChange}
+                            onChange={handleFileChange}
                             placeholder="Enter image URL"
                             style={{
                                 padding: '12px 16px',
@@ -133,12 +153,18 @@ const ProductForm = ({ formData, handleChange, handleSubmit, isEditing, resetFor
                             }}
                             disabled={loading}
                         />
-                        {isEditing && typeof formData.product_image === 'string' && formData.product_image && (
+
+                        {/* Show image preview */}
+                        {formData.product_image && (
                             <div className="mt-2">
                                 <div className="d-flex align-items-center">
                                     <img
-                                        src={formData.product_image}
-                                        alt="Current product"
+                                        src={
+                                            typeof formData.product_image === 'object' && formData.product_image.preview
+                                                ? formData.product_image.preview
+                                                : formData.product_image
+                                        }
+                                        alt="Product preview"
                                         className="me-2"
                                         style={{
                                             width: '50px',
@@ -147,7 +173,9 @@ const ProductForm = ({ formData, handleChange, handleSubmit, isEditing, resetFor
                                             borderRadius: '8px'
                                         }}
                                     />
-                                    <p className="text-muted small mb-0">Current image</p>
+                                    <p className="text-muted small mb-0">
+                                        {isEditing ? 'Current image' : 'Preview'}
+                                    </p>
                                 </div>
                             </div>
                         )}
