@@ -2,12 +2,23 @@ import axiosInstance from './axiosInstance';
 
 export const productApi = {
     // Get all products with optional filtering
-    getAllProducts: async (filters = {}) => {
+    getProducts: async (filters = {}) => {
         try {
             const response = await axiosInstance.get('/products', { params: filters });
             return response.data;
         } catch (error) {
             console.error('Error fetching products:', error);
+            throw error;
+        }
+    },
+
+    // Get all categories
+    getCategories: async () => {
+        try {
+            const response = await axiosInstance.get('/categories');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching categories:', error);
             throw error;
         }
     },
@@ -30,28 +41,20 @@ export const productApi = {
 
             // Add all non-file fields to form data
             Object.keys(productData).forEach(key => {
-                if (key !== 'product_image' ||
-                    !(typeof productData.product_image === 'string' &&
-                        productData.product_image.startsWith('data:'))) {
+                if (key !== 'product_image') {
                     formData.append(key, productData[key]);
                 }
             });
 
             // Handle product image
             if (productData.product_image) {
-                if (typeof productData.product_image === 'string' &&
-                    productData.product_image.startsWith('data:')) {
-                    // Convert base64 to blob
-                    const response = await fetch(productData.product_image);
-                    const blob = await response.blob();
-                    formData.append('product_image', blob, 'product_image.jpg');
-                } else if (productData.product_image instanceof File) {
-                    // It's already a File object
+                if (productData.product_image instanceof File) {
                     formData.append('product_image', productData.product_image);
+                } else if (typeof productData.product_image === 'object' && productData.product_image.file) {
+                    formData.append('product_image', productData.product_image.file);
                 }
             }
 
-            // Need to override the Content-Type header for FormData
             const response = await axiosInstance.post('/products', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
@@ -72,28 +75,20 @@ export const productApi = {
 
             // Add all non-file fields to form data
             Object.keys(productData).forEach(key => {
-                if (key !== 'product_image' ||
-                    !(typeof productData.product_image === 'string' &&
-                        productData.product_image.startsWith('data:'))) {
+                if (key !== 'product_image') {
                     formData.append(key, productData[key]);
                 }
             });
 
             // Handle product image
             if (productData.product_image) {
-                if (typeof productData.product_image === 'string' &&
-                    productData.product_image.startsWith('data:')) {
-                    // Convert base64 to blob
-                    const response = await fetch(productData.product_image);
-                    const blob = await response.blob();
-                    formData.append('product_image', blob, 'product_image.jpg');
-                } else if (productData.product_image instanceof File) {
-                    // It's already a File object
+                if (productData.product_image instanceof File) {
                     formData.append('product_image', productData.product_image);
+                } else if (typeof productData.product_image === 'object' && productData.product_image.file) {
+                    formData.append('product_image', productData.product_image.file);
                 }
             }
 
-            // Need to override the Content-Type header for FormData
             const response = await axiosInstance.put(`/products/${slug}`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'

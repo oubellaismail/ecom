@@ -36,11 +36,14 @@ const ViewDetails = () => {
           price: typeof productData.price === 'number' ? productData.price :
             typeof productData.price === 'string' ? parseFloat(productData.price) :
               (productData.product_item && productData.product_item.price) || 0,
-          // Handle category - ensure it's a string
-          category: typeof productData.category === 'string' ? productData.category :
-            typeof productData.category_name === 'string' ? productData.category_name :
-              typeof productData.category_slug === 'string' ? productData.category_slug :
-                "Uncategorized",
+          // Handle category - now properly handling the category object
+          category: productData.category ? {
+            name: productData.category.name || "Uncategorized",
+            slug: productData.category.slug || ""
+          } : {
+            name: "Uncategorized",
+            slug: ""
+          },
           // Handle all possible image properties
           image: productData.image ||
             productData.product_image ||
@@ -65,31 +68,9 @@ const ViewDetails = () => {
     fetchProduct();
   }, [id]);
 
-  const handleQuantityChange = (e) => {
-    const value = parseInt(e.target.value);
-    if (value > 0 && value <= (product?.qte_stock || Infinity)) {
-      setQuantity(value);
-    }
-  };
-
-  const incrementQuantity = () => {
-    if (quantity < (product?.qte_stock || Infinity)) {
-      setQuantity(quantity + 1);
-    }
-  };
-
-  const decrementQuantity = () => {
-    if (quantity > 1) {
-      setQuantity(quantity - 1);
-    }
-  };
-
   const handleAddToCart = async () => {
     if (!user) {
-      setError('Please sign in to add items to your cart.');
-      setTimeout(() => {
-        navigate('/signin');
-      }, 1500);
+      navigate('/signin');
       return;
     }
 
@@ -99,26 +80,23 @@ const ViewDetails = () => {
       setSuccess('');
 
       const cartItem = {
+        id: product.id,
         name: product.name,
         quantity: quantity,
         price: product.price,
-        image: product.image
+        image: product.image,
+        size: product.category.name
       };
 
-      const result = cartService.addToCart(cartItem);
-
+      const result = await cartService.addToCart(cartItem);
       if (result.success) {
-        setSuccess('Item added to cart successfully!');
-        // Clear success message after 3 seconds
-        setTimeout(() => {
-          setSuccess('');
-        }, 3000);
+        setSuccess('Product added to cart successfully!');
       } else {
-        setError(result.error || 'Error adding item to cart. Please try again.');
+        setError(result.error || 'Error adding product to cart. Please try again.');
       }
     } catch (error) {
+      setError('Error adding product to cart. Please try again.');
       console.error('Add to cart error:', error);
-      setError('Error adding item to cart. Please try again.');
     } finally {
       setAddingToCart(false);
     }
@@ -126,7 +104,7 @@ const ViewDetails = () => {
 
   if (loading) {
     return (
-      <div className="container mt-5 text-center">
+      <div className="container text-center py-5">
         <div className="spinner-border" role="status" style={{ color: '#ff4d4d' }}>
           <span className="visually-hidden">Loading...</span>
         </div>
@@ -162,8 +140,8 @@ const ViewDetails = () => {
         <ol className="breadcrumb">
           <li className="breadcrumb-item"><Link to="/">Home</Link></li>
           <li className="breadcrumb-item">
-            <Link to={`/category/${typeof product.category === 'string' ? product.category.toLowerCase() : ''}`}>
-              {product.category}
+            <Link to={`/category/${product.category.slug}`}>
+              {product.category.name}
             </Link>
           </li>
           <li className="breadcrumb-item active" aria-current="page">{product.name}</li>
@@ -199,7 +177,7 @@ const ViewDetails = () => {
                 style={{ objectFit: "contain", maxHeight: "100%" }}
                 onError={(e) => {
                   console.error('Image failed to load:', product.image);
-                  e.target.src = '/placeholder-image.jpg'; // Fallback image
+                  e.target.src = '/placeholder-image.jpg';
                 }}
               />
             ) : (
@@ -214,8 +192,8 @@ const ViewDetails = () => {
         {/* Product Details */}
         <div className="col-md-6">
           <div className="mb-3">
-            <span className="badge bg-secondary mb-2">
-              {product.category}
+            <span className="badge bg-gradient mb-2" style={{ background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)' }}>
+              {product.category.name}
             </span>
             <h2 className="fw-bold mb-3">{product.name}</h2>
             <p className="h3 mb-4">${displayPrice}</p>
@@ -236,58 +214,52 @@ const ViewDetails = () => {
             </div>
 
             {product.qte_stock > 0 && (
-              <div className="mb-4">
-                <h6 className="fw-bold mb-3">Quantity:</h6>
-                <div className="d-flex align-items-center" style={{ maxWidth: "150px" }}>
+              <div className="d-flex align-items-center gap-3 mb-4">
+                <div className="input-group" style={{ width: '150px' }}>
                   <button
                     className="btn btn-outline-secondary"
-                    onClick={decrementQuantity}
-                    disabled={quantity <= 1}
+                    type="button"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   >
                     -
                   </button>
                   <input
                     type="number"
-                    className="form-control mx-2 text-center"
+                    className="form-control text-center"
                     value={quantity}
-                    onChange={handleQuantityChange}
+                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
                     min="1"
                     max={product.qte_stock}
                   />
                   <button
                     className="btn btn-outline-secondary"
-                    onClick={incrementQuantity}
-                    disabled={quantity >= product.qte_stock}
+                    type="button"
+                    onClick={() => setQuantity(Math.min(product.qte_stock, quantity + 1))}
                   >
                     +
                   </button>
                 </div>
+                <button
+                  className="btn btn-lg flex-grow-1"
+                  style={{
+                    background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
+                    color: 'white',
+                    borderRadius: '12px'
+                  }}
+                  onClick={handleAddToCart}
+                  disabled={addingToCart}
+                >
+                  {addingToCart ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      Adding...
+                    </>
+                  ) : (
+                    'Add to Cart'
+                  )}
+                </button>
               </div>
             )}
-
-            <div className="d-grid gap-2 d-md-flex mt-4">
-              <button
-                className="btn btn-lg flex-grow-1"
-                style={{
-                  background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
-                  color: 'white',
-                  borderRadius: '12px'
-                }}
-                disabled={product.qte_stock === 0 || addingToCart}
-                onClick={handleAddToCart}
-              >
-                {addingToCart ? (
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                ) : null}
-                Add to Cart
-              </button>
-              <button
-                className="btn btn-outline-dark btn-lg"
-                onClick={() => navigate('/cart')}
-              >
-                <i className="bi bi-cart"></i> View Cart
-              </button>
-            </div>
           </div>
         </div>
       </div>

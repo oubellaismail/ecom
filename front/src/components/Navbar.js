@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import cartService from '../api/cartService';
+import { productApi } from '../api/productService';
 
 // Simple SVG icons
 const CartIcon = () => (
@@ -8,13 +10,6 @@ const CartIcon = () => (
     <circle cx="9" cy="21" r="1"></circle>
     <circle cx="20" cy="21" r="1"></circle>
     <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-  </svg>
-);
-
-const SearchIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8"></circle>
-    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
   </svg>
 );
 
@@ -26,12 +21,45 @@ const UserIcon = () => (
 );
 
 const Navbar = () => {
-  const { isLoggedIn, logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [cartCount, setCartCount] = useState(0);
+  const [searchResults, setSearchResults] = useState([]);
+  const [showResults, setShowResults] = useState(false);
+
+  useEffect(() => {
+    const fetchCartCount = async () => {
+      try {
+        const cart = await cartService.getCart();
+        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+        setCartCount(totalItems);
+      } catch (error) {
+        console.error('Error fetching cart:', error);
+      }
+    };
+
+    if (user) {
+      fetchCartCount();
+    }
+  }, [user]);
+
+  const handleSearch = async (e) => {
+    if (e.key === 'Enter' && searchTerm.trim()) {
+      try {
+        const response = await productApi.searchProducts(searchTerm.trim());
+        setSearchResults(response.data || []);
+        setShowResults(true);
+      } catch (error) {
+        console.error('Error searching products:', error);
+        setSearchResults([]);
+      }
+    }
+  };
 
   const handleLogout = () => {
     logout();
-    navigate('/signin');
+    navigate('/');
   };
 
   return (
@@ -54,9 +82,9 @@ const Navbar = () => {
         </Link>
 
         {/* Navbar toggler */}
-        <button className="navbar-toggler border-0 shadow-none" type="button" 
+        <button className="navbar-toggler border-0 shadow-none" type="button"
           data-bs-toggle="collapse" data-bs-target="#navbarContent"
-          style={{color: '#333'}}>
+          style={{ color: '#333' }}>
           <span className="navbar-toggler-icon"></span>
         </button>
 
@@ -79,28 +107,31 @@ const Navbar = () => {
               </Link>
             </li>
             <li className="nav-item mx-1">
-              <Link className="nav-link px-3" to="/shop" style={{color: '#333', fontWeight: '500'}}>
+              <Link className="nav-link px-3" to="/shop" style={{ color: '#333', fontWeight: '500' }}>
                 Shop
               </Link>
             </li>
             <li className="nav-item mx-1">
-              <Link className="nav-link px-3" to="/new" style={{color: '#333', fontWeight: '500'}}>
-                New Arrivals
+              <Link className="nav-link px-3" to="/about" style={{ color: '#333', fontWeight: '500' }}>
+                About
               </Link>
             </li>
             <li className="nav-item mx-1">
-              <Link className="nav-link px-3" to="/sale" style={{color: '#333', fontWeight: '500'}}>
-                Sale
+              <Link className="nav-link px-3" to="/contact" style={{ color: '#333', fontWeight: '500' }}>
+                Contact
               </Link>
             </li>
           </ul>
 
           {/* Search Bar */}
-          <form className="d-flex position-relative my-3 my-lg-0 mx-lg-auto" style={{maxWidth: '300px'}}>
+          <form className="d-flex position-relative my-3 my-lg-0 mx-lg-auto" style={{ maxWidth: '300px' }}>
             <input
               type="search"
               className="form-control pe-5"
               placeholder="Search products..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={handleSearch}
               style={{
                 borderRadius: '25px',
                 padding: '10px 15px',
@@ -110,20 +141,43 @@ const Navbar = () => {
             />
             <button
               className="btn position-absolute end-0 top-0 bottom-0"
-              type="submit"
+              type="button"
+              onClick={() => searchTerm.trim() && handleSearch({ key: 'Enter' })}
               style={{
                 border: 'none',
                 background: 'transparent',
                 color: '#555'
               }}
             >
-              <SearchIcon />
+              <i className="bi bi-search"></i>
             </button>
+            {showResults && searchResults.length > 0 && (
+              <div className="position-absolute top-100 start-0 end-0 mt-1 bg-white rounded shadow-lg" style={{ zIndex: 1000 }}>
+                {searchResults.map(product => (
+                  <Link
+                    key={product.id}
+                    to={`/product/${product.slug}`}
+                    className="d-flex align-items-center p-2 text-decoration-none text-dark hover-bg-light"
+                    onClick={() => setShowResults(false)}
+                  >
+                    <img
+                      src={product.image || '/placeholder-image.jpg'}
+                      alt={product.name}
+                      style={{ width: '40px', height: '40px', objectFit: 'cover', marginRight: '10px' }}
+                    />
+                    <div>
+                      <div className="fw-bold">{product.name}</div>
+                      <div className="text-muted small">${product.price}</div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </form>
 
           {/* Right actions */}
           <div className="d-flex align-items-center ms-lg-auto mt-3 mt-lg-0">
-            {isLoggedIn && (
+            {user && (
               <>
                 <Link to="/profile" className="btn p-2 me-2 rounded-circle" style={{
                   background: 'rgba(236, 236, 236, 0.7)',
@@ -136,17 +190,19 @@ const Navbar = () => {
                   color: '#333'
                 }}>
                   <CartIcon />
-                  <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill" style={{
-                    background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
-                    fontSize: '0.65rem'
-                  }}>
-                    3
-                  </span>
+                  {cartCount > 0 && (
+                    <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill" style={{
+                      background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
+                      fontSize: '0.65rem'
+                    }}>
+                      {cartCount}
+                    </span>
+                  )}
                 </Link>
               </>
             )}
 
-            {isLoggedIn ? (
+            {user ? (
               <Link onClick={handleLogout} to="/" className="btn ms-2" style={{
                 background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
                 color: 'white',

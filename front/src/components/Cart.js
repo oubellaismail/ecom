@@ -1,19 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import orderService from '../api/orderService';
-import paypalService from '../api/paypalService';
-import discountService from '../api/discountService';
 import cartService from '../api/cartService';
 import { useAuth } from '../context/AuthContext';
 
 const Cart = () => {
   const [items, setItems] = useState([]);
   const [coupon, setCoupon] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [discount, setDiscount] = useState(0);
   const [couponMessage, setCouponMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [couponSuccess, setCouponSuccess] = useState(true);
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -32,13 +29,14 @@ const Cart = () => {
     }
   };
 
-  const handleDelete = (itemName) => {
+  const handleDelete = (itemId) => {
     try {
-      const result = cartService.removeFromCart(itemName);
+      const result = cartService.removeFromCart(itemId);
       if (result.success) {
         setItems(result.cart);
+        setError('');
       } else {
-        setError('Error removing item. Please try again.');
+        setError(result.error || 'Error removing item. Please try again.');
       }
     } catch (err) {
       setError('Error removing item. Please try again.');
@@ -46,16 +44,17 @@ const Cart = () => {
     }
   };
 
-  const handleQuantityChange = (itemName, value) => {
+  const handleQuantityChange = (itemId, value) => {
     try {
       const qty = parseInt(value);
       if (isNaN(qty) || qty < 1) return;
 
-      const result = cartService.updateQuantity(itemName, qty);
+      const result = cartService.updateQuantity(itemId, qty);
       if (result.success) {
         setItems(result.cart);
+        setError('');
       } else {
-        setError('Error updating quantity. Please try again.');
+        setError(result.error || 'Error updating quantity. Please try again.');
       }
     } catch (err) {
       setError('Error updating quantity. Please try again.');
@@ -64,26 +63,48 @@ const Cart = () => {
   };
 
   const handleApplyCoupon = async (e) => {
-    e.preventDefault();
-    const code = coupon.trim().toUpperCase();
-    setLoading(true);
-    setError('');
+    e.preventDefault(); // Prevent form submission and page refresh
+
+    if (!coupon.trim()) {
+      setCouponMessage('Please enter a coupon code');
+      setCouponSuccess(false);
+      return;
+    }
 
     try {
-      const response = await discountService.getDiscount(code);
-      if (response && response.data) {
-        setDiscount(response.data.amount);
-        setAppliedCoupon(code);
-        setCouponMessage(`Coupon "${code}" applied!`);
+      setLoading(true);
+      setError('');
+      setCouponMessage('');
+
+      const result = await cartService.validateCoupon(coupon);
+      console.log('Coupon validation result:', result); // Debug log
+
+      if (result.success && result.data) {
+        const discountPercentage = parseFloat(result.data.discount_percentage);
+        console.log('Discount percentage:', discountPercentage); // Debug log
+
+        if (isNaN(discountPercentage)) {
+          throw new Error('Invalid discount percentage received');
+        }
+
+        const discountAmount = (subtotal * discountPercentage) / 100;
+        console.log('Discount amount:', discountAmount); // Debug log
+
+        setDiscount(discountAmount);
+        setCouponMessage(`Coupon "${result.data.code}" applied! ${discountPercentage}% discount ($${discountAmount.toFixed(2)})`);
+        setCouponSuccess(true);
       } else {
-        setCouponMessage('Invalid coupon code.');
+        setDiscount(0);
+        setCouponMessage(result.message || 'Invalid coupon code');
+        setCouponSuccess(false);
       }
     } catch (error) {
-      setCouponMessage('Error applying coupon. Please try again.');
-      console.error('Coupon error:', error);
+      console.error('Coupon error:', error); // Debug log
+      setDiscount(0);
+      setCouponMessage(error.message || 'Error applying coupon. Please try again.');
+      setCouponSuccess(false);
     } finally {
       setLoading(false);
-      setCoupon('');
     }
   };
 
@@ -98,7 +119,6 @@ const Cart = () => {
       return;
     }
 
-    // Navigate to checkout page
     navigate('/checkout');
   };
 
@@ -160,8 +180,8 @@ const Cart = () => {
                   <div className="card-body p-4">
                     <ul className="list-unstyled mb-0">
                       {items.map((item) => (
-                        <li key={item.name} className="d-flex align-items-center gap-3 mb-4 pb-4" style={{
-                          borderBottom: item.name !== items[items.length - 1].name ? '1px solid rgba(0,0,0,0.1)' : 'none'
+                        <li key={item.id} className="d-flex align-items-center gap-3 mb-4 pb-4" style={{
+                          borderBottom: item.id !== items[items.length - 1].id ? '1px solid rgba(0,0,0,0.1)' : 'none'
                         }}>
                           <div style={{ position: 'relative', width: '100px', height: '100px' }}>
                             <img
@@ -182,9 +202,9 @@ const Cart = () => {
                             <div className="d-flex mb-2">
                               <span className="me-3 text-muted" style={{ fontSize: '0.9rem' }}>category: {item.size}</span>
                             </div>
-                            <span className="fw-bold" style={{ color: '#ff4d4d' }}>${parseFloat(item.price).toFixed(2)}</span>
+                            <span className="fw-bold" style={{ color: '#ff4d4d' }}>${item.price ? parseFloat(item.price).toFixed(2) : '0.00'}</span>
                           </div>
-                          <div className="d-flex align-items-center gap-3">
+                          <div className="d-flex align-items-center gap-2">
                             <div className="input-group" style={{ width: '100px' }}>
                               <input
                                 type="number"
@@ -224,7 +244,6 @@ const Cart = () => {
                   boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
                 }}>
                   <div className="card-body p-4">
-                    {/* Coupon Code Form */}
                     <form onSubmit={handleApplyCoupon} className="mb-4">
                       <label className="form-label fw-semibold">Have a coupon?</label>
                       <div className="input-group">
@@ -249,13 +268,12 @@ const Cart = () => {
                         </button>
                       </div>
                       {couponMessage && (
-                        <small className={couponMessage.includes('applied') ? 'text-success' : 'text-danger'}>
+                        <div className={`mt-2 ${couponSuccess ? 'text-success' : 'text-danger'}`}>
                           {couponMessage}
-                        </small>
+                        </div>
                       )}
                     </form>
 
-                    {/* Order Summary */}
                     <h5 className="fw-bold mb-3">Order Summary</h5>
 
                     <div className="mb-2 d-flex justify-content-between">
@@ -266,10 +284,18 @@ const Cart = () => {
                       <span className="text-muted">VAT (10%)</span>
                       <span>${vat.toFixed(2)}</span>
                     </div>
-                    <div className="mb-2 d-flex justify-content-between" style={{ color: '#ff4d4d' }}>
-                      <span>Discount</span>
-                      <span>-${discount.toFixed(2)}</span>
-                    </div>
+                    {discount > 0 && (
+                      <>
+                        <div className="mb-2 d-flex justify-content-between text-success">
+                          <span>Discount Applied</span>
+                          <span>-${discount.toFixed(2)}</span>
+                        </div>
+                        <div className="mb-2 d-flex justify-content-between text-success">
+                          <span>New Subtotal</span>
+                          <span>${(subtotal - discount).toFixed(2)}</span>
+                        </div>
+                      </>
+                    )}
                     <div className="mb-3 d-flex justify-content-between fw-bold">
                       <span>Total</span>
                       <span>${total.toFixed(2)}</span>

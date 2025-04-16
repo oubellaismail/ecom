@@ -24,15 +24,20 @@ const ProductCard = ({ product }) => {
             const cartService = (await import('../api/cartService')).default;
 
             const cartItem = {
-                productId: product.id || product._id,
+                id: product.id || product._id,
+                name: product.name,
                 quantity: 1,
                 price: product.price,
-                image: getImageUrl(), // Use our getImageUrl function for consistency
-                name: product.name
+                image: getImageUrl(),
+                size: product.category_name || product.category_slug
             };
 
-            await cartService.addToCart(cartItem);
-            alert('Product added to cart successfully!');
+            const result = await cartService.addToCart(cartItem);
+            if (result.success) {
+                alert('Product added to cart successfully!');
+            } else {
+                alert(result.error || 'Error adding product to cart. Please try again.');
+            }
         } catch (error) {
             console.error('Error adding to cart:', error);
             alert('Error adding product to cart. Please try again.');

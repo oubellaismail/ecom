@@ -1,3 +1,7 @@
+import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+
 const cartService = {
     // Get cart from localStorage
     getCart: () => {
@@ -16,7 +20,7 @@ const cartService = {
             const cart = cartService.getCart();
 
             // Check if item already exists in cart
-            const existingItemIndex = cart.findIndex(cartItem => cartItem.name === item.name);
+            const existingItemIndex = cart.findIndex(cartItem => cartItem.id === item.id);
 
             if (existingItemIndex !== -1) {
                 // Update quantity if item exists
@@ -35,10 +39,10 @@ const cartService = {
     },
 
     // Remove item from cart
-    removeFromCart: (itemName) => {
+    removeFromCart: (itemId) => {
         try {
             const cart = cartService.getCart();
-            const updatedCart = cart.filter(item => item.name !== itemName);
+            const updatedCart = cart.filter(item => item.id !== itemId);
             localStorage.setItem('cart', JSON.stringify(updatedCart));
             return { success: true, cart: updatedCart };
         } catch (error) {
@@ -48,11 +52,15 @@ const cartService = {
     },
 
     // Update item quantity
-    updateQuantity: (itemName, quantity) => {
+    updateQuantity: (itemId, quantity) => {
         try {
+            if (quantity < 1) {
+                return { success: false, error: 'Quantity must be at least 1' };
+            }
+
             const cart = cartService.getCart();
             const updatedCart = cart.map(item => {
-                if (item.name === itemName) {
+                if (item.id === itemId) {
                     return { ...item, quantity };
                 }
                 return item;
@@ -73,6 +81,42 @@ const cartService = {
         } catch (error) {
             console.error('Error clearing cart:', error);
             return { success: false, error: error.message };
+        }
+    },
+
+    validateCoupon: async (code) => {
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                return {
+                    success: false,
+                    error: 'Please log in to apply coupons'
+                };
+            }
+
+            const response = await axios.get(`${API_URL}/discounts/${code}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.data.success && response.data.data) {
+                return {
+                    success: true,
+                    data: response.data.data
+                };
+            } else {
+                return {
+                    success: false,
+                    error: response.data.message || 'Invalid coupon code'
+                };
+            }
+        } catch (error) {
+            console.error('Error validating coupon:', error);
+            return {
+                success: false,
+                error: error.response?.data?.message || 'Invalid coupon code'
+            };
         }
     }
 };

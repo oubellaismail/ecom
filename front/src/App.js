@@ -22,6 +22,7 @@ import EditProfile from './components/EditProfile.js';
 import ViewDetails from './components/ViewDetails.js';
 import OrderValidation from './components/OrderValidation.js';
 import DiscountCoupons from './components/DiscountCoupons.js';
+import AllProducts from './components/AllProducts.js';
 
 function HomePage() {
   return (
@@ -56,6 +57,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/edit-profile" element={<EditProfile />} />
           <Route path="/product/:id" element={<ViewDetails />} />
+          <Route path="/shop" element={<AllProducts />} />
         </Routes>
         <Footer />
       </Router>
