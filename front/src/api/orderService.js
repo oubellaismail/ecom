@@ -79,11 +79,30 @@ const orderService = {
         }
     },
 
+    // Handle payment callback
+    handlePaymentCallback: async (paymentId, token, payerId) => {
+        try {
+            const response = await axiosInstance.get('/payments/success', {
+                params: {
+                    payment_id: paymentId,
+                    token: token,
+                    payer_id: payerId
+                }
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error;
+        }
+    },
+
     // Handle PayPal success callback
     handlePayPalSuccess: async (paymentId, payerId) => {
         try {
-            const response = await axiosInstance.get('/payments/paypal/success', {
-                params: { paymentId, payerId }
+            const response = await axiosInstance.get('/payments/success', {
+                params: {
+                    payment_id: paymentId,
+                    payer_id: payerId
+                }
             });
             return response.data;
         } catch (error) {
@@ -94,7 +113,7 @@ const orderService = {
     // Handle PayPal cancel callback
     handlePayPalCancel: async () => {
         try {
-            const response = await axiosInstance.get('/payments/paypal/cancel');
+            const response = await axiosInstance.get('/payments/cancel');
             return response.data;
         } catch (error) {
             throw error.response?.data || error;

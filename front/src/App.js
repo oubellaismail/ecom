@@ -25,6 +25,7 @@ import DiscountCoupons from './components/DiscountCoupons.js';
 import AllProducts from './components/AllProducts.js';
 import About from './components/About.js';
 import ProtectedAdminRoute from './components/ProtectedAdminRoute';
+import CheckoutSuccess from './components/CheckoutSuccess';
 
 function HomePage() {
   return (
@@ -80,6 +81,7 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<Checkout />} />
+              <Route path="/checkout/success" element={<CheckoutSuccess />} />
               <Route
                 path="/edit-profile"
                 element={

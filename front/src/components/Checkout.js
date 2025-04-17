@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import addressService from '../api/addressService';
 import orderService from '../api/orderService';
 import countryService from '../api/countryService';
@@ -14,6 +14,8 @@ const Checkout = () => {
     city: '',
     postalCode: '',
     country: '',
+    region: '',
+    phone: '',
     paymentMethod: 'cod' // Default to COD
   });
   const [countries, setCountries] = useState([]);
@@ -91,7 +93,8 @@ const Checkout = () => {
                 address: street || '',
                 city: city || '',
                 postalCode: postal_code || '',
-                country: country_code || ''
+                country: country_code || '',
+                phone: addressResponse.data.phone_number || ''
               }));
             }
           } catch (addressError) {
@@ -100,13 +103,13 @@ const Checkout = () => {
           }
         }
       } catch (error) {
-        console.error('Checkout data error:', error);
-        setError('Error loading checkout data. Please try again.');
+        console.error('Error loading data:', error);
+        setError('Failed to load checkout data. Please try again.');
       }
     };
 
     loadData();
-  }, [user]);
+  }, [orderSummary.shipping, orderSummary.discount, user]);
 
   // Add a useEffect to monitor countries state changes
   useEffect(() => {
@@ -128,13 +131,39 @@ const Checkout = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('Form submitted with data:', formData);
+
     if (!user) {
+      console.log('No user found, redirecting to signin');
       navigate('/signin');
       return;
     }
 
     if (cartItems.length === 0) {
+      console.log('Cart is empty');
       setError('Your cart is empty. Please add items before checkout.');
+      return;
+    }
+
+    // Validate required fields
+    const requiredFields = {
+      fullName: 'Full Name',
+      email: 'Email',
+      address: 'Address',
+      city: 'City',
+      region: 'Region/State',
+      postalCode: 'Postal Code',
+      phone: 'Phone Number',
+      country: 'Country',
+      paymentMethod: 'Payment Method'
+    };
+
+    const missingFields = Object.entries(requiredFields)
+      .filter(([field]) => !formData[field])
+      .map(([, label]) => label);
+
+    if (missingFields.length > 0) {
+      setError(`Please fill in the following required fields: ${missingFields.join(', ')}`);
       return;
     }
 
@@ -142,45 +171,73 @@ const Checkout = () => {
     setError('');
 
     try {
-      // Save address
-      const addressData = {
-        full_name: formData.fullName,
-        email: formData.email,
-        street: formData.address,
-        city: formData.city,
-        postal_code: formData.postalCode,
-        country_code: formData.country,
-        is_default: true
-      };
-      console.log('Submitting address data:', addressData);
+      console.log('Starting checkout process...');
 
-      const addressResponse = await addressService.createAddress(addressData);
-      console.log('Address creation response:', addressResponse);
-
-      // Create order
-      const orderData = {
-        items: cartItems.map(item => ({
-          product_name: item.name,
-          quantity: item.quantity,
-          price: item.price
+      // Prepare payment data
+      const paymentData = {
+        amount_before_discount: orderSummary.subtotal,
+        total_amount: orderSummary.total,
+        order_lines: cartItems.map(item => ({
+          product_item_id: item.id,
+          qty: item.quantity
         })),
-        shipping_address_id: addressResponse.data.id,
-        payment_method: formData.paymentMethod,
-        total_amount: orderSummary.total
+        shipping_address: {
+          address_line1: formData.address,
+          address_line2: '',
+          city: formData.city,
+          region: formData.region,
+          postal_code: formData.postalCode,
+          phone_number: formData.phone,
+          country_code: formData.country
+        },
+        payment_method_code: formData.paymentMethod,
+        notes: formData.notes || ''
       };
-      console.log('Submitting order data:', orderData);
 
-      const orderResponse = await orderService.placeOrder(orderData);
-      console.log('Order creation response:', orderResponse);
+      console.log('Submitting payment data:', paymentData);
+
+      // Initiate payment
+      const paymentResponse = await orderService.initiatePayment(paymentData);
+      console.log('Payment initiation response:', paymentResponse);
+
+      if (!paymentResponse.success) {
+        throw new Error(paymentResponse.message || 'Failed to initiate payment');
+      }
+
+      // Handle different payment methods
+      if (formData.paymentMethod === 'cod') {
+        console.log('Processing COD payment');
+        // For COD, no redirect needed
+        navigate(`/checkout/success?payment_id=${paymentResponse.data.payment_id}`);
+      } else if (formData.paymentMethod === 'paypal') {
+        console.log('Processing PayPal payment');
+        // For PayPal, redirect to approval URL
+        if (paymentResponse.data.redirect_url) {
+          console.log('Redirecting to PayPal:', paymentResponse.data.redirect_url);
+          // Store payment ID in localStorage for later use
+          localStorage.setItem('pending_payment_id', paymentResponse.data.payment_id);
+          // Redirect to PayPal
+          window.location.href = paymentResponse.data.redirect_url;
+        } else {
+          throw new Error('No PayPal redirect URL provided');
+        }
+      } else if (formData.paymentMethod === 'stripe') {
+        console.log('Processing Stripe payment');
+        // For Stripe, redirect to payment page
+        if (paymentResponse.data.redirect_url) {
+          console.log('Redirecting to Stripe:', paymentResponse.data.redirect_url);
+          localStorage.setItem('pending_payment_id', paymentResponse.data.payment_id);
+          window.location.href = paymentResponse.data.redirect_url;
+        } else {
+          throw new Error('No Stripe redirect URL provided');
+        }
+      }
 
       // Clear cart
       cartService.clearCart();
-
-      // Navigate to success page
-      navigate(`/checkout/success?order_id=${orderResponse.data.id}`);
     } catch (error) {
       console.error('Checkout error:', error);
-      setError('Error processing your order. Please try again.');
+      setError(error.message || 'Error processing your order. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -296,6 +353,29 @@ const Checkout = () => {
                     </div>
                     <div className="col-md-6 mb-3">
                       <label className="form-label" style={{ fontWeight: '500', fontSize: '0.9rem' }}>
+                        Region/State
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="region"
+                        value={formData.region}
+                        onChange={handleChange}
+                        placeholder="Region/State"
+                        style={{
+                          padding: '12px 16px',
+                          borderRadius: '12px',
+                          background: 'rgba(236, 236, 236, 0.7)',
+                          border: 'none'
+                        }}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="row">
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label" style={{ fontWeight: '500', fontSize: '0.9rem' }}>
                         Postal Code
                       </label>
                       <input
@@ -305,6 +385,26 @@ const Checkout = () => {
                         value={formData.postalCode}
                         onChange={handleChange}
                         placeholder="Postal Code"
+                        style={{
+                          padding: '12px 16px',
+                          borderRadius: '12px',
+                          background: 'rgba(236, 236, 236, 0.7)',
+                          border: 'none'
+                        }}
+                        required
+                      />
+                    </div>
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label" style={{ fontWeight: '500', fontSize: '0.9rem' }}>
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        className="form-control"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        placeholder="Phone Number"
                         style={{
                           padding: '12px 16px',
                           borderRadius: '12px',
@@ -342,7 +442,7 @@ const Checkout = () => {
                     </select>
                   </div>
 
-                  <div className="card border-0" style={{
+                  <div className="card border-0 mt-4" style={{
                     borderRadius: '16px',
                     overflow: 'hidden',
                     boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
