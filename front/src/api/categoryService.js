@@ -11,10 +11,10 @@ export const categoryApi = {
         }
     },
 
-    // Get single category by id
-    getCategory: async (id) => {
+    // Get single category by slug
+    getCategory: async (slug) => {
         try {
-            const response = await axiosInstance.get(`/categories/${id}`);
+            const response = await axiosInstance.get(`/categories/${slug}`);
             return response.data;
         } catch (error) {
             throw error.response?.data || error;
@@ -32,9 +32,9 @@ export const categoryApi = {
     },
 
     // Update an existing category
-    updateCategory: async (id, categoryData) => {
+    updateCategory: async (slug, categoryData) => {
         try {
-            const response = await axiosInstance.put(`/categories/${id}`, categoryData);
+            const response = await axiosInstance.put(`/categories/${slug}`, categoryData);
             return response.data;
         } catch (error) {
             throw error.response?.data || error;
@@ -42,9 +42,9 @@ export const categoryApi = {
     },
 
     // Delete a category
-    deleteCategory: async (id) => {
+    deleteCategory: async (slug) => {
         try {
-            const response = await axiosInstance.delete(`/categories/${id}`);
+            const response = await axiosInstance.delete(`/categories/${slug}`);
             return response.data;
         } catch (error) {
             throw error.response?.data || error;

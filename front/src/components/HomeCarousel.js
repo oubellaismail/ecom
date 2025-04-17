@@ -22,33 +22,6 @@ const HomeCarousel = () => {
       buttonText: 'View Offers',
       buttonLink: '/sale',
       position: 'center'
-    },
-    {
-      id: 3,
-      image: '/images/3.jpg',
-      title: 'New Arrivals',
-      subtitle: 'Be the first to wear our newest collections',
-      buttonText: 'Explore',
-      buttonLink: '/new',
-      position: 'right'
-    },
-    {
-      id: 4,
-      image: '/images/4.jpg',
-      title: 'New Arrivals',
-      subtitle: 'Be the first to wear our newest collections',
-      buttonText: 'Explore',
-      buttonLink: '/new',
-      position: 'center'
-    },
-    {
-      id: 5,
-      image: '/images/5.jpg',
-      title: 'New Arrivals',
-      subtitle: 'Be the first to wear our newest collections',
-      buttonText: 'Explore',
-      buttonLink: '/new',
-      position: 'left'
     }
   ];
 

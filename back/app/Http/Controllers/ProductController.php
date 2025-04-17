@@ -28,9 +28,9 @@ class ProductController extends Controller
 
         // Filter by product name or description
         if (request()->has('search')) {
-            $query->where(function($q) {
+            $query->where(function ($q) {
                 $q->where('name', 'like', '%' . request('search') . '%')
-                  ->orWhere('description', 'like', '%' . request('search') . '%');
+                    ->orWhere('description', 'like', '%' . request('search') . '%');
             });
         }
 
@@ -49,14 +49,15 @@ class ProductController extends Controller
 
         // $products = $query->get();
         $products = $query->select(['id', 'name', 'slug', 'description', 'category_id'])
-        ->with([
-            'category:id,name,slug', 
-            'productItem:id,product_id,price,qty_in_stock,product_image'
-        ])
-        ->get();
+            ->with([
+                'category:id,name,slug',
+                'productItem:id,product_id,price,qty_in_stock,product_image'
+            ])
+            ->get();
 
         $transformedProducts = $products->map(function ($product) {
             return [
+                'id' => $product->id,
                 'name' => $product->name,
                 'slug' => $product->slug,
                 'description' => $product->description,
@@ -67,7 +68,7 @@ class ProductController extends Controller
                 'product_item' => $product->productItem ? [
                     'price' => $product->productItem->price,
                     'qty_in_stock' => $product->productItem->qty_in_stock,
-                    'product_image' => $product->productItem->product_image 
+                    'product_image' => $product->productItem->product_image
                         ? asset('storage/' . $product->productItem->product_image)
                         : null,
                 ] : null,
@@ -141,7 +142,6 @@ class ProductController extends Controller
                 'data' => $product->slug,
                 'message' => "Product and product item for {$slug} created successfully"
             ], 201);
-
         } catch (\Exception $e) {
             // Rollback the transaction if there’s an error
             \DB::rollBack();
@@ -161,17 +161,18 @@ class ProductController extends Controller
     public function show(string $slug)
     {
         $product = Product::where('slug', $slug)->with(['category', 'productItem'])->first();
-        
+
         if (!$product) {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => 'Product not found'
             ], 404);
         }
-        
+
         return response()->json([
             'success' => true,
             'data' => [
+                'id' => $product->id,
                 'name' => $product->name,
                 'slug' => $product->slug,
                 'description' => $product->description,
@@ -182,7 +183,7 @@ class ProductController extends Controller
                 'product_item' => $product->productItem ? [
                     'qty_in_stock' => $product->productItem->qty_in_stock,
                     'price' => $product->productItem->price,
-                    'product_image' => $product->productItem->product_image 
+                    'product_image' => $product->productItem->product_image
                         ? asset('storage/' . $product->productItem->product_image)
                         : null,
                 ] : null
@@ -197,14 +198,14 @@ class ProductController extends Controller
     public function update(Request $request, string $id)
     {
         $product = Product::find($id);
-        
+
         if (!$product) {
             return response()->json([
                 'success' => false,
                 'message' => 'Product not found'
             ], 404);
         }
-        
+
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|required|string|max:255',
             'description' => 'nullable|string',
@@ -219,11 +220,14 @@ class ProductController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-        
+
         $product->update($request->only([
-            'name', 'description', 'category_id', 'is_active'
+            'name',
+            'description',
+            'category_id',
+            'is_active'
         ]));
-        
+
         return response()->json([
             'success' => true,
             'data' => $product->loadMissing('category'),

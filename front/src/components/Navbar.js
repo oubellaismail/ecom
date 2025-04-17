@@ -116,11 +116,7 @@ const Navbar = () => {
                 About
               </Link>
             </li>
-            <li className="nav-item mx-1">
-              <Link className="nav-link px-3" to="/contact" style={{ color: '#333', fontWeight: '500' }}>
-                Contact
-              </Link>
-            </li>
+
           </ul>
 
           {/* Search Bar */}

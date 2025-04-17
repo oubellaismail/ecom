@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { loginUser } from '../api/authService';
 import { useAuth } from '../context/AuthContext';
 
-
 const SignIn = () => {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const [errorMessage, setErrorMessage] = useState('');
@@ -24,13 +23,19 @@ const SignIn = () => {
     setIsLoading(true);
     try {
       const data = await loginUser(credentials);
-
       login(data);
 
       setSuccessMessage('Login successful!');
       console.log('Login success:', data);
 
-      setTimeout(() => navigate('/dashboard'), 1500);
+      // Navigate based on user role
+      setTimeout(() => {
+        if (data.is_admin) {
+          navigate('/AdminDashboard');
+        } else {
+          navigate('/');
+        }
+      }, 1500);
     } catch (error) {
       setErrorMessage(error.message || 'Login failed');
       console.error('Login error:', error);
@@ -138,8 +143,6 @@ const SignIn = () => {
                 <div className="d-flex align-items-center my-4">
                   <div className="flex-grow-1 border-bottom"></div>
                 </div>
-
-
 
                 {/* Sign up link */}
                 <div className="text-center" style={{ fontSize: '0.9rem' }}>

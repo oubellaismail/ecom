@@ -23,6 +23,8 @@ import ViewDetails from './components/ViewDetails.js';
 import OrderValidation from './components/OrderValidation.js';
 import DiscountCoupons from './components/DiscountCoupons.js';
 import AllProducts from './components/AllProducts.js';
+import About from './components/About.js';
+import ProtectedAdminRoute from './components/ProtectedAdminRoute';
 
 function HomePage() {
   return (
@@ -41,25 +43,58 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <Navbar />
-        <Routes>
-          <Route path="/signin" element={<SignIn />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/order" element={<OrderValidation />} />
-          <Route path="/discount" element={<DiscountCoupons />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/" element={<HomePage />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/AdminDashboard" element={<AdminDashboard />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/edit-profile" element={<EditProfile />} />
-          <Route path="/product/:id" element={<ViewDetails />} />
-          <Route path="/shop" element={<AllProducts />} />
-        </Routes>
-        <Footer />
+        <div className="d-flex flex-column min-vh-100">
+          <Navbar />
+          <main className="flex-grow-1">
+            <Routes>
+              <Route path="/signin" element={<SignIn />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/signup" element={<SignUp />} />
+              <Route path="/order" element={<OrderValidation />} />
+              <Route path="/discount" element={<DiscountCoupons />} />
+              <Route
+                path="/AdminDashboard"
+                element={
+                  <ProtectedAdminRoute>
+                    <AdminDashboard />
+                  </ProtectedAdminRoute>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedAdminRoute>
+                    <Dashboard />
+                  </ProtectedAdminRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedAdminRoute>
+                    <Profile />
+                  </ProtectedAdminRoute>
+                }
+              />
+              <Route path="/" element={<HomePage />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route
+                path="/edit-profile"
+                element={
+                  <ProtectedAdminRoute>
+                    <EditProfile />
+                  </ProtectedAdminRoute>
+                }
+              />
+              <Route path="/product/:id" element={<ViewDetails />} />
+              <Route path="/shop" element={<AllProducts />} />
+              <Route path="/about" element={<About />} />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
       </Router>
     </AuthProvider>
   );

@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Discount;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str; 
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use App\Http\Requests\Discounts\StoreDiscountRequest;
 
@@ -36,9 +36,22 @@ class DiscountController extends Controller
             ], 404);
         }
 
+        // Get authenticated user
+        $user = auth()->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => "Please log in to use this discount"
+            ], 401);
+        }
+
+        // Check if user has already used this discount
         if ($user->hasUsedDiscount($discount->id)) {
-            return response()->json(['error' => 'You have already used this discount.'], 400);
-        }   
+            return response()->json([
+                'success' => false,
+                'message' => 'You have already used this discount.'
+            ], 400);
+        }
 
         // Return discount data
         return response()->json([

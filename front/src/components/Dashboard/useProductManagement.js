@@ -51,7 +51,7 @@ const useProductManagement = () => {
     const loadProducts = async () => {
         setLoading(true);
         try {
-            const response = await productApi.getAllProducts();
+            const response = await productApi.getProducts();
 
             // Check if response.data is an array or a single product
             let productsArray = [];

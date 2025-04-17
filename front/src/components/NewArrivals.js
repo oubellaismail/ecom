@@ -12,20 +12,49 @@ const NewArrivals = () => {
       try {
         setLoading(true);
         setError('');
-        const response = await productApi.getAllProducts({ new_arrival: true });
+        const response = await productApi.getProducts({ new_arrival: true });
+        console.log('API Response:', response); // Debug log
 
         // Handle different response formats
-        const data = Array.isArray(response) ? response :
-          response.products ? response.products :
-            response.data ? response.data : [];
+        let data = [];
+        if (Array.isArray(response)) {
+          data = response;
+        } else if (response.products) {
+          data = response.products;
+        } else if (response.data) {
+          data = Array.isArray(response.data) ? response.data : [response.data];
+        }
 
-        // Add new_arrival flag to each product
-        const productsWithFlag = data.map(product => ({
-          ...product,
-          new_arrival: true
-        }));
+        // Transform the data to ensure it has the required fields
+        const transformedProducts = data.map(product => {
+          // Debug log to inspect the image structure
+          console.log('Product image data:', {
+            id: product.id || product._id,
+            name: product.name,
+            imageProps: {
+              image: product.image,
+              product_image: product.product_image,
+              productItemImage: product.product_item?.product_image
+            }
+          });
 
-        setProducts(productsWithFlag);
+          return {
+            id: product.id || product._id,
+            name: product.name,
+            price: product.price || product.product_item?.price,
+            category: product.category || product.category_name || product.category_slug,
+            // Preserve all possible image properties instead of merging them
+            image: product.image,
+            product_image: product.product_image,
+            product_item: product.product_item,
+            qte_stock: product.qte_stock || product.qty_in_stock || product.product_item?.qty_in_stock,
+            new_arrival: true, // Force new_arrival flag to true for all products
+            slug: product.slug
+          };
+        });
+
+        console.log('Transformed Products:', transformedProducts); // Debug log
+        setProducts(transformedProducts);
       } catch (error) {
         setError('Error loading new arrivals. Please try again.');
         console.error('New arrivals error:', error);

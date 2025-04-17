@@ -31,7 +31,7 @@ class User extends Authenticatable
     ];
 
     protected $attributes = [
-        'role_id' => 2, 
+        'role_id' => 2,
     ];
 
     /**
@@ -64,7 +64,12 @@ class User extends Authenticatable
 
     public function discounts()
     {
-        return $this->belongsToMany(Discount::class)
-                    ->withTimestamps(); // Optional if you want created_at/updated_at
+        return $this->belongsToMany(Discount::class, 'discount_user')
+            ->withTimestamps();
+    }
+
+    public function hasUsedDiscount($discountId)
+    {
+        return $this->discounts()->where('discount_id', $discountId)->exists();
     }
 }

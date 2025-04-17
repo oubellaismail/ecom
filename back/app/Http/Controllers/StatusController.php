@@ -40,11 +40,11 @@ class StatusController extends Controller
         // 7. Sales Overview for the Previous 6 Months (Monthly sales totals)
         $sixMonthsAgo = Carbon::now()->subMonths(6);
         $salesOverview = Payment::where('status', 'completed')
-                        ->where('paid_at', '>=', $sixMonthsAgo)
-                        ->selectRaw('SUM(amount) as total, EXTRACT(MONTH FROM paid_at) as month, EXTRACT(YEAR FROM paid_at) as year')
-                        ->groupByRaw('EXTRACT(YEAR FROM paid_at), EXTRACT(MONTH FROM paid_at)')
-                        ->orderByRaw('EXTRACT(YEAR FROM paid_at) DESC, EXTRACT(MONTH FROM paid_at) DESC')
-                        ->get();
+            ->where('paid_at', '>=', $sixMonthsAgo)
+            ->selectRaw('SUM(amount) as total, EXTRACT(MONTH FROM paid_at) as month, EXTRACT(YEAR FROM paid_at) as year')
+            ->groupByRaw('EXTRACT(YEAR FROM paid_at), EXTRACT(MONTH FROM paid_at)')
+            ->orderByRaw('EXTRACT(YEAR FROM paid_at) DESC, EXTRACT(MONTH FROM paid_at) DESC')
+            ->get();
 
 
         // 8. Monthly Average and Total Revenue for the Last 6 Months
@@ -53,28 +53,34 @@ class StatusController extends Controller
 
         // 9. 10 Recent Orders
         $recentOrders = ShopOrder::with('user', 'orderStatus')
-                                ->orderBy('ordered_at', 'desc')
-                                ->take(10)
-                                ->get();
+            ->orderBy('ordered_at', 'desc')
+            ->take(10)
+            ->get();
 
         return response()->json([
             'success' => true,
             'data' => [
-                'total_sales' => $totalSales,
-                'total_orders' => $totalOrders,
-                'total_products' => $totalProducts,
-                'total_customers' => $totalCustomers,
-                'total_pending_orders' => $totalPendingOrders,
-                'total_low_stock_products' => $totalLowStockProducts,
-                'sales_overview' => $salesOverview,
-                'monthly_average_revenue' => $monthlyAverage,
-                'total_revenue_last_6_months' => $totalRevenueLast6Months,
+                'total_sales' => (float)$totalSales,
+                'total_orders' => (int)$totalOrders,
+                'total_products' => (int)$totalProducts,
+                'total_customers' => (int)$totalCustomers,
+                'total_pending_orders' => (int)$totalPendingOrders,
+                'total_low_stock_products' => (int)$totalLowStockProducts,
+                'sales_overview' => $salesOverview->map(function ($item) {
+                    return [
+                        'total' => (float)$item->total,
+                        'month' => (int)$item->month,
+                        'year' => (int)$item->year
+                    ];
+                }),
+                'monthly_average_revenue' => (float)$monthlyAverage,
+                'total_revenue_last_6_months' => (float)$totalRevenueLast6Months,
                 'recent_orders' => $recentOrders->map(function ($recentOrder) {
                     return [
-                        "user_full_name" => $recentOrder->user->usernmae . ' ' . $recentOrder->user->last_name,
+                        "user_full_name" => $recentOrder->user->username . ' ' . $recentOrder->user->last_name,
                         "order_status" => $recentOrder->orderStatus->status,
                         "order_number" => $recentOrder->order_number,
-                        "total_amount" => $recentOrder->total_amount
+                        "total_amount" => (float)$recentOrder->total_amount
                     ];
                 }),
             ],

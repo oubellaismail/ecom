@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import productService from '../api/productService';
+import cartService from '../api/cartService';
+import { useAuth } from '../context/AuthContext';
 
 const AllProducts = () => {
     const [products, setProducts] = useState([]);
@@ -13,6 +15,36 @@ const AllProducts = () => {
     const [sortBy, setSortBy] = useState('name');
     const [sortOrder, setSortOrder] = useState('asc');
     const [categories, setCategories] = useState([]);
+    const navigate = useNavigate();
+    const { user } = useAuth();
+
+    const handleAddToCart = async (product) => {
+        if (!user) {
+            navigate('/signin');
+            return;
+        }
+
+        try {
+            const cartItem = {
+                id: product.id || product._id,
+                name: product.name,
+                quantity: 1,
+                price: product.product_item?.price || product.price,
+                image: product.product_item?.product_image || product.image,
+                size: product.category?.name || product.category_name || product.category_slug
+            };
+
+            const result = await cartService.addToCart(cartItem);
+            if (result.success) {
+                alert('Product added to cart successfully!');
+            } else {
+                alert(result.error || 'Error adding product to cart. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            alert('Error adding product to cart. Please try again.');
+        }
+    };
 
     const loadData = useCallback(async () => {
         try {
@@ -254,6 +286,7 @@ const AllProducts = () => {
                                         <button
                                             className="btn"
                                             disabled={product.product_item?.qty_in_stock === 0}
+                                            onClick={() => handleAddToCart(product)}
                                             style={{
                                                 border: '1px solid #ddd',
                                                 borderRadius: '12px',

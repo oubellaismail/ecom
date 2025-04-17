@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import categoryApi from '../../api/categoryService';
-import statusApi from '../../api/statusService';
 
 const useCategoryManagement = () => {
     const [categories, setCategories] = useState([]);
@@ -34,8 +33,17 @@ const useCategoryManagement = () => {
     const loadCategories = async () => {
         setLoading(true);
         try {
-            const response = await statusApi.getStatuses();
-            setCategories(response.data.categories || []);
+            const response = await categoryApi.getAllCategories();
+
+            // Check if response.data is an array or wrap a single item in an array
+            let categoriesArray = [];
+            if (Array.isArray(response.data)) {
+                categoriesArray = response.data;
+            } else if (response.data && typeof response.data === 'object') {
+                categoriesArray = [response.data];
+            }
+
+            setCategories(categoriesArray);
         } catch (error) {
             console.error("API Error:", error);
             setErrorMessage('Failed to load categories: ' + (error.message || 'Unknown error'));

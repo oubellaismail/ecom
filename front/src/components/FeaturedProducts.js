@@ -12,7 +12,7 @@ const FeaturedProducts = () => {
       try {
         setLoading(true);
         setError('');
-        const response = await productApi.getAllProducts({ featured: true });
+        const response = await productApi.getProducts({ featured: true });
         console.log('API Response:', response); // Debug log
 
         // Handle different response formats
