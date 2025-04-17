@@ -62,6 +62,7 @@ return new class extends Migration {
         Schema::create('order_statuses', function (Blueprint $table) {
             $table->id();
             $table->string('status');
+            $table->string('code')->unique();
             $table->string('description')->nullable();
             $table->timestamps();
         });
@@ -91,6 +92,7 @@ return new class extends Migration {
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('address_id')->nullable()->constrained('addresses')->onDelete('set null');
             $table->foreignId('discount_id')->nullable()->constrained('discounts')->onDelete('set null'); // Link to discount table
+            $table->foreignId('order_status_id')->default(1)->constrained('order_statuses')->onDelete('cascade');
             $table->string('order_number')->unique();
             $table->decimal('amount_before_discount', 10, 2); // Store the total amount before discount
             $table->decimal('discount_amount', 10, 2)->default(0); // Store the discount applied
@@ -105,7 +107,6 @@ return new class extends Migration {
         Schema::create('order_status_histories', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained('shop_orders')->onDelete('cascade');
-            $table->foreignId('order_status_id')->default(1)->constrained('order_statuses')->onDelete('cascade');
             $table->timestamp('changed_at')->useCurrent();
             $table->text('comment')->nullable();
             $table->timestamps();

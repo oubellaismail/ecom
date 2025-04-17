@@ -12,7 +12,7 @@ class ShopOrder extends Model
 
     protected $fillable = [
         'user_id', 'order_status_id',
-        'order_number', 'tax_amount', 'discount_amount',
+        'order_number', 'tax_amount', 'discount_amount', 'discount_id', 'address_id',
         'total_amount', 'notes', 'ordered_at', 'amount_before_discount'
     ];
 

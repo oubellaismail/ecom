@@ -10,6 +10,12 @@ class OrderStatus extends Model
     use HasFactory;
 
     const PENDING = 1;
+    const PROCESSING = 2;
+    const SHIPPED = 3;
+    const DELIVERED = 4;
+    const CANCELED = 5;
+    const REFUNDED = 6;
+
 
     public function orders()
     {

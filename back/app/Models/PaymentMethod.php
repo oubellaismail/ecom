@@ -12,6 +12,10 @@ class PaymentMethod extends Model
 
     protected $fillable = ['name', 'code', 'is_active'];
 
+    const PAYPAL = 1;
+    const STRIPE = 2;
+    const COD = 3;
+
     public function payments()
     {
         return $this->hasMany(Payment::class, 'payment_method_id');
