@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import ProductCard from './ProductCard';
+import { Container } from 'react-bootstrap';
 
 const CategoryCard = ({ category, products }) => {
   return (
@@ -105,14 +106,43 @@ const CategoriesShowcase = () => {
   }
 
   return (
-    <section className="categories-showcase py-5">
-      <div className="container">
-        <div className="row mb-4">
-          <div className="col-12 text-center">
-            <h2 className="section-title">Featured Category</h2>
-            <p className="section-subtitle">Discover our curated selection of products</p>
-          </div>
-        </div>
+    <section className="py-5" style={{ 
+      background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '100%',
+        background: 'radial-gradient(circle at 50% 50%, rgba(255, 77, 77, 0.1) 0%, transparent 50%)',
+        pointerEvents: 'none'
+      }}></div>
+      
+      <Container>
+        <h2 className="text-center mb-5" style={{
+          fontWeight: '800',
+          fontSize: '2.5rem',
+          background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          position: 'relative',
+          paddingBottom: '1rem'
+        }}>
+          Categories
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '80px',
+            height: '4px',
+            background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
+            borderRadius: '2px'
+          }}></div>
+        </h2>
 
         {error && (
           <div className="alert alert-danger alert-dismissible fade show"
@@ -131,49 +161,7 @@ const CategoriesShowcase = () => {
             />
           )}
         </div>
-      </div>
-
-      <style>
-        {`
-          .categories-showcase {
-            background-color: #ffffff;
-          }
-          
-          .section-title {
-            font-weight: 700;
-            font-size: 2rem;
-            color: #333;
-            margin-bottom: 0.5rem;
-          }
-          
-          .section-subtitle {
-            color: #6c757d;
-            font-size: 1rem;
-            margin-bottom: 2rem;
-          }
-          
-          .category-section {
-            margin-bottom: 3rem;
-          }
-          
-          .category-header {
-            text-align: center;
-            margin-bottom: 2rem;
-          }
-          
-          .category-title {
-            font-weight: 600;
-            font-size: 1.5rem;
-            color: #333;
-            margin-bottom: 0.5rem;
-          }
-          
-          .category-description {
-            color: #6c757d;
-            margin-bottom: 1rem;
-          }
-        `}
-      </style>
+      </Container>
     </section>
   );
 };

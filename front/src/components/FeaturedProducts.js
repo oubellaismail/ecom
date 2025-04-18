@@ -64,29 +64,72 @@ const FeaturedProducts = () => {
   if (loading) {
     return (
       <div className="container text-center py-5">
-        <div className="spinner-border" role="status" style={{ color: '#ff4d4d' }}>
+        <div className="spinner-border" role="status" style={{ 
+          color: '#ff4d4d',
+          width: '3rem',
+          height: '3rem',
+          borderWidth: '0.3em'
+        }}>
           <span className="visually-hidden">Loading...</span>
         </div>
-        <p className="mt-3" style={{ fontWeight: '500' }}>Loading featured products...</p>
+        <p className="mt-3" style={{ 
+          fontWeight: '500',
+          color: '#ff4d4d',
+          fontSize: '1.1rem'
+        }}>Loading featured products...</p>
       </div>
     );
   }
 
   return (
-    <section className="py-5" style={{ background: 'rgba(249, 249, 249, 0.5)' }}>
+    <section className="py-5" style={{ 
+      background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '100%',
+        background: 'radial-gradient(circle at 50% 50%, rgba(255, 77, 77, 0.1) 0%, transparent 50%)',
+        pointerEvents: 'none'
+      }}></div>
+      
       <Container>
         <h2 className="text-center mb-5" style={{
-          fontWeight: '700',
+          fontWeight: '800',
+          fontSize: '2.5rem',
           background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
           WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent'
+          WebkitTextFillColor: 'transparent',
+
+          position: 'relative',
+          paddingBottom: '1rem'
         }}>
           Featured Products
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '80px',
+            height: '4px',
+            background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
+            borderRadius: '2px'
+          }}></div>
         </h2>
 
         {error && (
           <div className="alert alert-danger alert-dismissible fade show"
-            style={{ borderRadius: '12px', border: 'none', background: 'rgba(255, 77, 77, 0.1)' }}
+            style={{ 
+              borderRadius: '12px',
+              border: 'none',
+              background: 'rgba(255, 77, 77, 0.1)',
+              backdropFilter: 'blur(5px)',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+            }}
             role="alert">
             {error}
             <button type="button" className="btn-close" onClick={() => setError('')}></button>
@@ -95,48 +138,106 @@ const FeaturedProducts = () => {
 
         {products.length === 0 && !error && (
           <div className="alert alert-info"
-            style={{ borderRadius: '12px', border: 'none', background: 'rgba(0, 123, 255, 0.1)' }}
+            style={{ 
+              borderRadius: '12px',
+              border: 'none',
+              background: 'rgba(255, 77, 77, 0.1)',
+              backdropFilter: 'blur(5px)',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+            }}
             role="alert">
             No featured products available at the moment.
           </div>
         )}
 
         {products.length > 0 && (
-          <Swiper
-            modules={[Navigation, Pagination, Autoplay]}
-            spaceBetween={30}
-            slidesPerView={1}
-            navigation
-            pagination={{ clickable: true }}
-            autoplay={{
-              delay: 3000,
-              disableOnInteraction: false,
-            }}
-            breakpoints={{
-              576: {
-                slidesPerView: 2,
-              },
-              768: {
-                slidesPerView: 3,
-              },
-              992: {
-                slidesPerView: 4,
-              },
-            }}
-            style={{
-              padding: '20px 0',
-              '--swiper-navigation-color': '#ff4d4d',
-              '--swiper-pagination-color': '#ff4d4d',
-            }}
-          >
-            {products.map(product => (
-              <SwiperSlide key={product.id}>
-                <div className="p-2">
-                  <ProductCard product={product} />
-                </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
+          <div style={{ position: 'relative' }}>
+            <Swiper
+              modules={[Navigation, Pagination, Autoplay]}
+              spaceBetween={30}
+              slidesPerView={1}
+              navigation={{
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+              }}
+              pagination={{
+                clickable: true,
+                el: '.swiper-pagination',
+                bulletClass: 'swiper-pagination-bullet',
+                bulletActiveClass: 'swiper-pagination-bullet-active'
+              }}
+              autoplay={{
+                delay: 3000,
+                disableOnInteraction: false,
+              }}
+              breakpoints={{
+                576: {
+                  slidesPerView: 2,
+                },
+                768: {
+                  slidesPerView: 3,
+                },
+                992: {
+                  slidesPerView: 4,
+                },
+              }}
+              style={{
+                padding: '20px 0 40px',
+                '--swiper-navigation-color': '#ff4d4d',
+                '--swiper-pagination-color': '#ff4d4d',
+                '--swiper-pagination-bullet-size': '10px',
+                '--swiper-pagination-bullet-inactive-color': '#999',
+                '--swiper-pagination-bullet-inactive-opacity': '0.5',
+                '--swiper-pagination-bullet-horizontal-gap': '6px'
+              }}
+            >
+              {products.map(product => (
+                <SwiperSlide key={product.id}>
+                  <div className="p-2" style={{
+                    transition: 'transform 0.3s ease',
+                    '&:hover': {
+                      transform: 'translateY(-5px)'
+                    }
+                  }}>
+                    <ProductCard product={product} />
+                  </div>
+                </SwiperSlide>
+              ))}
+              
+              {/* Custom Pagination */}
+              <div className="swiper-pagination" style={{
+                position: 'relative',
+                bottom: '0',
+                marginTop: '20px'
+              }}></div>
+            </Swiper>
+            
+            {/* Custom Navigation Arrows - Positioned outside the Swiper */}
+            <div className="swiper-button-next" style={{
+              background: 'rgba(255, 255, 255, 0.9)',
+              width: '50px',
+              height: '50px',
+              borderRadius: '50%',
+              boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+              right: '-60px',
+              '&:after': {
+                fontSize: '24px',
+                color: '#ff4d4d'
+              }
+            }}></div>
+            <div className="swiper-button-prev" style={{
+              background: 'rgba(255, 255, 255, 0.9)',
+              width: '50px',
+              height: '50px',
+              borderRadius: '50%',
+              boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+              left: '-60px',
+              '&:after': {
+                fontSize: '24px',
+                color: '#ff4d4d'
+              }
+            }}></div>
+          </div>
         )}
       </Container>
     </section>
