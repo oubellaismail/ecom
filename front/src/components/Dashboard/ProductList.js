@@ -15,6 +15,11 @@ const TrashIcon = () => (
 );
 
 const ProductList = ({ products, handleEdit, handleDelete, handleAddNew, errorMessage, successMessage, loading }) => {
+    // Wrap handleAddNew to ensure it sets the active tab
+    const handleAddNewProduct = () => {
+        handleAddNew();
+    };
+
     return (
         <div className="card border-0" style={{
             background: 'rgba(255, 255, 255, 0.8)',
@@ -26,7 +31,7 @@ const ProductList = ({ products, handleEdit, handleDelete, handleAddNew, errorMe
                 <div className="d-flex justify-content-between align-items-center mb-4">
                     <h3 className="fw-bold mb-0">Product List</h3>
                     <button
-                        onClick={handleAddNew}
+                        onClick={handleAddNewProduct}
                         className="btn"
                         style={{
                             background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
