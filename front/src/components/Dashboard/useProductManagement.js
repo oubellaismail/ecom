@@ -172,6 +172,7 @@ const useProductManagement = () => {
                 throw new Error('Product not found');
             }
         } catch (error) {
+            console.error("Error loading product:", error);
             setErrorMessage('Failed to load product: ' + (error.message || 'Unknown error'));
         } finally {
             setLoading(false);

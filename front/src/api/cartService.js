@@ -1,4 +1,5 @@
 import axios from 'axios';
+import axiosInstance from './axiosInstance';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
@@ -6,7 +7,12 @@ const cartService = {
     // Get cart from localStorage
     getCart: () => {
         try {
-            const cart = localStorage.getItem('cart');
+            const userStr = localStorage.getItem('user');
+            const user = userStr ? JSON.parse(userStr) : null;
+            const username = user?.username;
+            const cartKey = username ? `cart_${username}` : 'cart_guest';
+            console.log('Loading cart for user:', username, 'with key:', cartKey); // Debug log
+            const cart = localStorage.getItem(cartKey);
             return cart ? JSON.parse(cart) : [];
         } catch (error) {
             console.error('Error getting cart:', error);
@@ -17,20 +23,21 @@ const cartService = {
     // Add item to cart
     addToCart: (item) => {
         try {
+            const userStr = localStorage.getItem('user');
+            const user = userStr ? JSON.parse(userStr) : null;
+            const username = user?.username;
+            const cartKey = username ? `cart_${username}` : 'cart_guest';
+            console.log('Adding to cart for user:', username, 'with key:', cartKey); // Debug log
             const cart = cartService.getCart();
-
-            // Check if item already exists in cart
             const existingItemIndex = cart.findIndex(cartItem => cartItem.id === item.id);
 
             if (existingItemIndex !== -1) {
-                // Update quantity if item exists
                 cart[existingItemIndex].quantity += item.quantity;
             } else {
-                // Add new item
                 cart.push(item);
             }
 
-            localStorage.setItem('cart', JSON.stringify(cart));
+            localStorage.setItem(cartKey, JSON.stringify(cart));
             return { success: true, cart };
         } catch (error) {
             console.error('Error adding to cart:', error);
@@ -41,9 +48,14 @@ const cartService = {
     // Remove item from cart
     removeFromCart: (itemId) => {
         try {
+            const userStr = localStorage.getItem('user');
+            const user = userStr ? JSON.parse(userStr) : null;
+            const username = user?.username;
+            const cartKey = username ? `cart_${username}` : 'cart_guest';
+            console.log('Removing from cart for user:', username, 'with key:', cartKey); // Debug log
             const cart = cartService.getCart();
             const updatedCart = cart.filter(item => item.id !== itemId);
-            localStorage.setItem('cart', JSON.stringify(updatedCart));
+            localStorage.setItem(cartKey, JSON.stringify(updatedCart));
             return { success: true, cart: updatedCart };
         } catch (error) {
             console.error('Error removing from cart:', error);
@@ -58,6 +70,11 @@ const cartService = {
                 return { success: false, error: 'Quantity must be at least 1' };
             }
 
+            const userStr = localStorage.getItem('user');
+            const user = userStr ? JSON.parse(userStr) : null;
+            const username = user?.username;
+            const cartKey = username ? `cart_${username}` : 'cart_guest';
+            console.log('Updating quantity for user:', username, 'with key:', cartKey); // Debug log
             const cart = cartService.getCart();
             const updatedCart = cart.map(item => {
                 if (item.id === itemId) {
@@ -65,7 +82,7 @@ const cartService = {
                 }
                 return item;
             });
-            localStorage.setItem('cart', JSON.stringify(updatedCart));
+            localStorage.setItem(cartKey, JSON.stringify(updatedCart));
             return { success: true, cart: updatedCart };
         } catch (error) {
             console.error('Error updating quantity:', error);
@@ -76,7 +93,12 @@ const cartService = {
     // Clear cart
     clearCart: () => {
         try {
-            localStorage.removeItem('cart');
+            const userStr = localStorage.getItem('user');
+            const user = userStr ? JSON.parse(userStr) : null;
+            const username = user?.username;
+            const cartKey = username ? `cart_${username}` : 'cart_guest';
+            console.log('Clearing cart for user:', username, 'with key:', cartKey); // Debug log
+            localStorage.removeItem(cartKey);
             return { success: true };
         } catch (error) {
             console.error('Error clearing cart:', error);
@@ -86,37 +108,11 @@ const cartService = {
 
     validateCoupon: async (code) => {
         try {
-            const token = localStorage.getItem('access_token');
-            if (!token) {
-                return {
-                    success: false,
-                    error: 'Please log in to apply coupons'
-                };
-            }
-
-            const response = await axios.get(`${API_URL}/discounts/${code}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (response.data.success && response.data.data) {
-                return {
-                    success: true,
-                    data: response.data.data
-                };
-            } else {
-                return {
-                    success: false,
-                    error: response.data.message || 'Invalid coupon code'
-                };
-            }
+            const response = await axiosInstance.get(`${API_URL}/discounts/${code}`);
+            return response.data;
         } catch (error) {
             console.error('Error validating coupon:', error);
-            return {
-                success: false,
-                error: error.response?.data?.message || 'Invalid coupon code'
-            };
+            return { success: false, error: error.message };
         }
     }
 };

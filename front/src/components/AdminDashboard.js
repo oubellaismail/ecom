@@ -48,6 +48,7 @@ const AdminDashboard = () => {
     handleAddNew(); // This is the function from useProductManagement
     setActiveTab('addEdit'); // This updates the local activeTab state in AdminDashboard
   };
+
   // Modified category submit handler to redirect to category list afterwards
   const handleCategoryFormSubmit = async (e) => {
     await handleCategorySubmit(e);
@@ -63,6 +64,12 @@ const AdminDashboard = () => {
     }
   };
 
+  // Handle product edit
+  const handleProductEdit = async (slug) => {
+    await handleEdit(slug);
+    setActiveTab('addEdit');
+  };
+
   return (
     <div className="container-fluid">
       <div className="row">
@@ -71,7 +78,7 @@ const AdminDashboard = () => {
           <Sidebar
             activeTab={activeTab}
             setActiveTab={handleSetActiveTab}
-            handleAddNew={handleAddNewProduct} // Use the new wrapper function
+            handleAddNew={handleAddNewProduct}
             handleAddNewCategory={handleAddNewCategory}
             isEditing={isEditing}
             isEditingCategory={isEditingCategory}
@@ -91,7 +98,7 @@ const AdminDashboard = () => {
           {activeTab === 'products' && (
             <ProductList
               products={products}
-              handleEdit={handleEdit}
+              handleEdit={handleProductEdit}
               handleDelete={handleDelete}
               handleAddNew={handleAddNew}
               errorMessage={productErrorMessage}
@@ -112,7 +119,7 @@ const AdminDashboard = () => {
               errorMessage={productErrorMessage}
               successMessage={productSuccessMessage}
               loading={productLoading}
-              categories={categories}  // Pass categories to the form
+              categories={categories}
             />
           )}
 

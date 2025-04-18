@@ -75,7 +75,7 @@ export const productApi = {
 
             // Add all non-file fields to form data
             Object.keys(productData).forEach(key => {
-                if (key !== 'product_image') {
+                if (key !== 'product_image' && productData[key] !== undefined && productData[key] !== null) {
                     formData.append(key, productData[key]);
                 }
             });
@@ -89,6 +89,8 @@ export const productApi = {
                 }
             }
 
+            console.log('Updating product with data:', Object.fromEntries(formData));
+
             const response = await axiosInstance.put(`/products/${slug}`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
@@ -98,6 +100,9 @@ export const productApi = {
             return response.data;
         } catch (error) {
             console.error('Error updating product:', error);
+            if (error.response) {
+                console.error('Server response:', error.response.data);
+            }
             throw error;
         }
     },

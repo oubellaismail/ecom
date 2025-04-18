@@ -9,6 +9,10 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Requests\Products\StoreProductRequest;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+
 
 class ProductController extends Controller
 {
@@ -143,7 +147,7 @@ class ProductController extends Controller
                 'message' => "Product and product item for {$slug} created successfully"
             ], 201);
         } catch (\Exception $e) {
-            // Rollback the transaction if there’s an error
+            // Rollback the transaction if there's an error
             \DB::rollBack();
 
             // Optionally log the error or return a message
@@ -195,45 +199,133 @@ class ProductController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
-    {
-        $product = Product::find($id);
+    public function update(Request $request, string $slug)
+{
+    $product = Product::where('slug', $slug)->first();
 
-        if (!$product) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Product not found'
-            ], 404);
+    if (!$product) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Product not found'
+        ], 404);
+    }
+
+    $validator = Validator::make($request->all(), [
+        'name' => 'sometimes|required|string|max:255',
+        'description' => 'nullable|string',
+        'category_slug' => 'sometimes|required|exists:categories,slug',
+        'price' => 'sometimes|required|numeric|min:0',
+        'qty_in_stock' => 'sometimes|required|integer|min:0',
+        'product_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Validation error',
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    DB::beginTransaction();
+
+    try {
+        // Update product fields
+        if ($request->filled('name')) {
+            Log::info('Checkout data stored in database:', [
+                'checkout_id' => $request->name
+            ]);
+            $product->name = $request->name;
+            // Update slug if name changes
+            $product->slug = Str::slug($request->name);
         }
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
-            'category_id' => 'sometimes|required|exists:categories,id',
-            'is_active' => 'boolean'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ], 422);
+        if ($request->filled('description')) {
+            $product->description = $request->description;
         }
 
-        $product->update($request->only([
-            'name',
-            'description',
-            'category_id',
-            'is_active'
-        ]));
+        if ($request->filled('category_slug')) {
+            $category = Category::where('slug', $request->category_slug)->first();
+            if ($category) {
+                $product->category_id = $category->id;
+            }
+        }
+
+        // Save product changes
+        $product->save();
+
+        // Get existing product item or create a new one
+        $productItem = ProductItem::where('product_id', $product->id)->first();
+        if (!$productItem) {
+            $productItem = new ProductItem();
+            $productItem->product_id = $product->id;
+        }
+
+        // Update product item fields
+        if ($request->filled('price')) {
+            $productItem->price = $request->price;
+        }
+
+        if ($request->filled('qty_in_stock')) {
+            $productItem->qty_in_stock = $request->qty_in_stock;
+        }
+
+        // Handle image upload
+        if ($request->hasFile('product_image') && $request->file('product_image')->isValid()) {
+            // Delete old image if exists
+            if ($productItem->product_image) {
+                Storage::disk('public')->delete($productItem->product_image);
+            }
+
+            $image = $request->file('product_image');
+            $filename = Str::slug($product->name) . '-' . uniqid() . '.' . $image->getClientOriginalExtension();
+            $imagePath = $image->storeAs('products', $filename, 'public');
+            $productItem->product_image = $imagePath;
+        }
+
+        // Save product item changes
+        $productItem->save();
+
+        DB::commit();
+
+        // Load the updated relationships
+        $product->load(['category', 'productItem']);
 
         return response()->json([
             'success' => true,
-            'data' => $product->loadMissing('category'),
+            'data' => [
+                'id' => $product->id,
+                'name' => $product->name,
+                'slug' => $product->slug,
+                'description' => $product->description,
+                'category' => $product->category ? [
+                    'name' => $product->category->name,
+                    'slug' => $product->category->slug
+                ] : null,
+                'product_item' => [
+                    'qty_in_stock' => $productItem->qty_in_stock,
+                    'price' => $productItem->price,
+                    'product_image' => $productItem->product_image
+                        ? asset('storage/' . $productItem->product_image)
+                        : null,
+                ]
+            ],
             'message' => 'Product updated successfully'
         ]);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Product update error: ' . $e->getMessage());
+        \Log::error($e->getTraceAsString());
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Error updating product',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
+
 
     /**
      * Remove the specified resource from storage.
