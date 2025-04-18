@@ -126,21 +126,6 @@ const ProductCard = ({ product }) => {
                             New
                         </div>
                     )}
-
-                    {/* Add debugging information before the actual image */}
-                    <div style={{
-                        position: 'absolute',
-                        top: 0,
-                        right: 0,
-                        background: 'rgba(0,0,0,0.7)',
-                        color: 'white',
-                        padding: '2px 5px',
-                        fontSize: '8px',
-                        zIndex: 10
-                    }}>
-                        URL: {getImageUrl().substring(0, 20)}...
-                    </div>
-
                     <img
                         src={getImageUrl()}
                         className="card-img-top"

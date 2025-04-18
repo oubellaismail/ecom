@@ -28,6 +28,8 @@ Route::post('/register', [AuthController::class, 'register']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/categories/random', [CategoryController::class, 'showByCategory']);
+
 
     Route::apiResource('products', ProductController::class);
     Route::apiResource('categories', CategoryController::class);
@@ -45,6 +47,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('orders/status', [OrderController::class, 'updateStatus']);
 
     Route::apiResource('statuses', StatusController::class);
+
 });
 
 //paypal
@@ -67,5 +70,7 @@ Route::prefix('payments')->group(function () {
     // COD specific processing
     Route::post('cod/process', [OrderController::class, 'processCODOrder']);
 });
+
+// Public routes
 
 

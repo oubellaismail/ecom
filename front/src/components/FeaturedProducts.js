@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { Container } from 'react-bootstrap';
 import { productApi } from '../api/productService';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination, Autoplay } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 import ProductCard from './ProductCard';
 
 const FeaturedProducts = () => {
@@ -12,8 +18,8 @@ const FeaturedProducts = () => {
       try {
         setLoading(true);
         setError('');
-        const response = await productApi.getProducts({ featured: true });
-        console.log('API Response:', response); // Debug log
+        const response = await productApi.getProducts();
+        console.log('API Response:', response);
 
         // Handle different response formats
         let data = [];
@@ -25,35 +31,24 @@ const FeaturedProducts = () => {
           data = Array.isArray(response.data) ? response.data : [response.data];
         }
 
+        // Get 8 random products
+        const shuffled = [...data].sort(() => 0.5 - Math.random());
+        const randomProducts = shuffled.slice(0, 8);
+
         // Transform the data to ensure it has the required fields
-        const transformedProducts = data.map(product => {
-          // Debug log to inspect the image structure
-          console.log('Product image data:', {
-            id: product.id || product._id,
-            name: product.name,
-            imageProps: {
-              image: product.image,
-              product_image: product.product_image,
-              productItemImage: product.product_item?.product_image
-            }
-          });
+        const transformedProducts = randomProducts.map(product => ({
+          id: product.id || product._id,
+          name: product.name,
+          price: product.price || product.product_item?.price,
+          category: product.category || product.category_name || product.category_slug,
+          image: product.image,
+          product_image: product.product_image,
+          product_item: product.product_item,
+          qte_stock: product.qte_stock || product.qty_in_stock || product.product_item?.qty_in_stock,
+          new_arrival: product.new_arrival,
+          slug: product.slug
+        }));
 
-          return {
-            id: product.id || product._id,
-            name: product.name,
-            price: product.price || product.product_item?.price,
-            category: product.category || product.category_name || product.category_slug,
-            // Preserve all possible image properties instead of merging them
-            image: product.image,
-            product_image: product.product_image,
-            product_item: product.product_item,
-            qte_stock: product.qte_stock || product.qty_in_stock || product.product_item?.qty_in_stock,
-            new_arrival: product.new_arrival,
-            slug: product.slug
-          };
-        });
-
-        console.log('Transformed Products:', transformedProducts); // Debug log
         setProducts(transformedProducts);
       } catch (error) {
         setError('Error loading featured products. Please try again.');
@@ -78,8 +73,8 @@ const FeaturedProducts = () => {
   }
 
   return (
-    <section className="py-5">
-      <div className="container">
+    <section className="py-5" style={{ background: 'rgba(249, 249, 249, 0.5)' }}>
+      <Container>
         <h2 className="text-center mb-5" style={{
           fontWeight: '700',
           background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
@@ -106,12 +101,44 @@ const FeaturedProducts = () => {
           </div>
         )}
 
-        <div className="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
-          {products.map(product => (
-            <ProductCard key={product.id || product._id} product={product} />
-          ))}
-        </div>
-      </div>
+        {products.length > 0 && (
+          <Swiper
+            modules={[Navigation, Pagination, Autoplay]}
+            spaceBetween={30}
+            slidesPerView={1}
+            navigation
+            pagination={{ clickable: true }}
+            autoplay={{
+              delay: 3000,
+              disableOnInteraction: false,
+            }}
+            breakpoints={{
+              576: {
+                slidesPerView: 2,
+              },
+              768: {
+                slidesPerView: 3,
+              },
+              992: {
+                slidesPerView: 4,
+              },
+            }}
+            style={{
+              padding: '20px 0',
+              '--swiper-navigation-color': '#ff4d4d',
+              '--swiper-pagination-color': '#ff4d4d',
+            }}
+          >
+            {products.map(product => (
+              <SwiperSlide key={product.id}>
+                <div className="p-2">
+                  <ProductCard product={product} />
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        )}
+      </Container>
     </section>
   );
 };

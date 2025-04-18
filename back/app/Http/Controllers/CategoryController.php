@@ -185,4 +185,52 @@ class CategoryController extends Controller
             'message' =>  "Category {$slug} deleted successfully"
         ]);
     }
+
+    /**
+     * Display random products from a random category with a limit of 8
+     */
+    public function showByCategory()
+{
+    // Get a random category that has products
+    $category = Category::whereHas('products')
+        ->inRandomOrder()
+        ->first();
+
+    if (!$category) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No categories with products found'
+        ], 404);
+    }
+
+    // Get random products from the category with a limit of 8
+    $products = $category->products()
+        ->inRandomOrder()
+        ->limit(4)
+        ->with(['productItem:id,product_id,price,product_image,qty_in_stock'])
+        ->get()
+        ->map(function ($product) {
+            return [
+                'id' => $product->id,
+                'product_id' => $product->id,
+                'name' => $product->name,
+                'slug' => $product->slug,
+                'price' => optional($product->productItem)->price,
+                'qty_in_stock' => optional($product->productItem)->qty_in_stock,
+                'product_image' => $product->productItem && $product->productItem->product_image
+                    ? asset('storage/' . $product->productItem->product_image)
+                    : null,
+            ];
+        });
+
+    return response()->json([
+        'success' => true,
+        'data' => [
+            'category' => $category->only(['name', 'slug', 'description']),
+            'products' => $products
+        ],
+        'message' => 'Random products from random category retrieved successfully'
+    ]);
+}
+
 }
