@@ -94,19 +94,6 @@ const Sidebar = ({ activeTab, setActiveTab, handleAddNew, handleAddNewCategory, 
                     >
                         Dashboard
                     </Link>
-                    <Link
-                        to="/logout"
-                        className="nav-link text-start py-3 px-4"
-                        style={{
-                            borderRadius: '12px',
-                            background: 'rgba(236, 236, 236, 0.7)',
-                            color: '#333',
-                            fontWeight: '500',
-                            textDecoration: 'none'
-                        }}
-                    >
-                        Logout
-                    </Link>
                 </div>
             </div>
         </div>

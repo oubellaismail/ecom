@@ -235,8 +235,8 @@ const DiscountCoupons = () => {
                                                     <td>{coupon.usage_limit}</td>
                                                     <td>{coupon.used_count || 0}</td>
                                                     <td>
-                                                        <span className={`badge ${coupon.status === 'active' ? 'bg-success' : 'bg-danger'}`}>
-                                                            {coupon.status}
+                                                        <span className={`badge ${coupon.is_active === true ? 'bg-success' : 'bg-danger'}`}>
+                                                            {coupon.is_active ? 'Active' : 'Inactive'}
                                                         </span>
                                                     </td>
                                                 </tr>

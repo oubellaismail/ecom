@@ -8,7 +8,7 @@ services:
       args:
         user: myuser
         uid: 1000
-    container_name: laravel_app_1
+    container_name: laravel_app
     depends_on:
       - database
     environment:
@@ -29,13 +29,13 @@ services:
     build:
       context: ./front
       dockerfile: Dockerfile.dev
-    container_name: react_app_2
+    container_name: react_app
     networks:
       - app_network
 
   database:
     image: postgres:latest
-    container_name: pgsql_db_1
+    container_name: pgsql_db
     environment:
       POSTGRES_DB: ecommerce
       POSTGRES_USER: postgres

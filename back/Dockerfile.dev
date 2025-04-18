@@ -38,11 +38,11 @@ RUN mkdir -p storage bootstrap/cache vendor && \
 
 RUN php artisan storage:link
 
-    # Switch to user
+# Switch to user
 USER $user
 
-# Run composer install
-RUN composer install --no-dev --prefer-dist --no-interaction --no-progress
+# Run composer install with dev dependencies
+RUN composer install --prefer-dist --no-interaction --no-progress
 
 # Expose port 8000
 EXPOSE 8000
