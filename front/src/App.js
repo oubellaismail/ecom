@@ -44,19 +44,26 @@ function HomePage() {
 
 function App() {
   return (
-    <CartProvider>
+    <Router>
       <AuthProvider>
-        <NotificationProvider>
-          <Router>
-            <div className="d-flex flex-column min-vh-100">
+        <CartProvider>
+          <NotificationProvider>
+            <div className="App">
               <Navbar />
-              <main className="flex-grow-1">
+              <main className="main-content">
                 <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/shop" element={<AllProducts />} />
+                  <Route path="/product/:id" element={<ViewDetails />} />
+                  <Route path="/cart" element={<Cart />} />
+                  <Route path="/checkout" element={<Checkout />} />
                   <Route path="/signin" element={<SignIn />} />
+                  <Route path="/signup" element={<SignUp />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/orders" element={<OrderValidation />} />
+                  <Route path="/admin" element={<AdminDashboard />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/signup" element={<SignUp />} />
-                  <Route path="/order" element={<OrderValidation />} />
                   <Route path="/discount" element={<DiscountCoupons />} />
                   <Route
                     path="/AdminDashboard"
@@ -75,18 +82,6 @@ function App() {
                     }
                   />
                   <Route
-                    path="/profile"
-                    element={
-                      <ProtectedAdminRoute>
-                        <Profile />
-                      </ProtectedAdminRoute>
-                    }
-                  />
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/cart" element={<Cart />} />
-                  <Route path="/checkout" element={<Checkout />} />
-                  <Route path="/checkout/success" element={<CheckoutSuccess />} />
-                  <Route
                     path="/edit-profile"
                     element={
                       <ProtectedAdminRoute>
@@ -94,17 +89,16 @@ function App() {
                       </ProtectedAdminRoute>
                     }
                   />
-                  <Route path="/product/:id" element={<ViewDetails />} />
-                  <Route path="/shop" element={<AllProducts />} />
                   <Route path="/about" element={<About />} />
+                  <Route path="/checkout/success" element={<CheckoutSuccess />} />
                 </Routes>
               </main>
               <Footer />
             </div>
-          </Router>
-        </NotificationProvider>
+          </NotificationProvider>
+        </CartProvider>
       </AuthProvider>
-    </CartProvider>
+    </Router>
   );
 }
 

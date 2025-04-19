@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import { useNotification } from '../context/NotificationContext';
 
 const ProductCard = ({ product }) => {
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { addToCart } = useCart();
     const [imageError, setImageError] = useState(false);
     const { showNotification } = useNotification();
 
@@ -22,9 +24,6 @@ const ProductCard = ({ product }) => {
         }
 
         try {
-            // Import cart service dynamically to avoid circular dependencies
-            const cartService = (await import('../api/cartService')).default;
-
             const cartItem = {
                 id: product.id || product._id,
                 name: product.name,
@@ -34,7 +33,7 @@ const ProductCard = ({ product }) => {
                 size: product.category_name || product.category_slug
             };
 
-            const result = await cartService.addToCart(cartItem);
+            const result = addToCart(cartItem);
             if (result.success) {
                 showNotification('Product added to cart successfully!', 'success');
             } else {

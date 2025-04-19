@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import cartService from '../api/cartService';
+import { useCart } from '../context/CartContext';
 import { productApi } from '../api/productService';
 
 // Simple SVG icons
@@ -22,27 +22,11 @@ const UserIcon = () => (
 
 const Navbar = () => {
   const { user, logout } = useAuth();
+  const { cart, getCartCount } = useCart();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [cartCount, setCartCount] = useState(0);
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
-
-  useEffect(() => {
-    const fetchCartCount = async () => {
-      try {
-        const cart = await cartService.getCart();
-        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-        setCartCount(totalItems);
-      } catch (error) {
-        console.error('Error fetching cart:', error);
-      }
-    };
-
-    if (user) {
-      fetchCartCount();
-    }
-  }, [user]);
 
   const handleSearch = async (e) => {
     if (e.key === 'Enter' && searchTerm.trim()) {
@@ -186,12 +170,12 @@ const Navbar = () => {
                   color: '#333'
                 }}>
                   <CartIcon />
-                  {cartCount > 0 && (
+                  {getCartCount() > 0 && (
                     <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill" style={{
                       background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
                       fontSize: '0.65rem'
                     }}>
-                      {cartCount}
+                      {getCartCount()}
                     </span>
                   )}
                 </Link>

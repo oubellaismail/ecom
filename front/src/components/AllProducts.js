@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import productService from '../api/productService';
-import cartService from '../api/cartService';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import Notification from './Notification';
 
 const AllProducts = () => {
@@ -19,6 +19,7 @@ const AllProducts = () => {
     const [notification, setNotification] = useState(null);
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { addToCart } = useCart();
 
     const handleAddToCart = async (product) => {
         if (!user) {
@@ -36,7 +37,7 @@ const AllProducts = () => {
                 size: product.category?.name || product.category_name || product.category_slug
             };
 
-            const result = await cartService.addToCart(cartItem);
+            const result = addToCart(cartItem);
             if (result.success) {
                 setNotification({
                     message: 'Product added to cart successfully!',

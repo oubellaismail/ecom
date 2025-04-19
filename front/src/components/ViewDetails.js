@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { productApi } from '../api/productService';
-import cartService from '../api/cartService';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 
 const ViewDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { addToCart } = useCart();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -88,7 +89,7 @@ const ViewDetails = () => {
         size: product.category.name
       };
 
-      const result = await cartService.addToCart(cartItem);
+      const result = addToCart(cartItem);
       if (result.success) {
         setSuccess('Product added to cart successfully!');
       } else {
