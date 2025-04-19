@@ -689,6 +689,7 @@ class OrderController extends Controller
                     'orderLines.productItem:id,product_id,price',
                     'orderLines.productItem.product:id,name',
                     'address:id,address_line1,city,region,postal_code,country_id',
+                    'user:id,first_name,last_name',
                 ])
                 ->orderBy('ordered_at', 'desc')
                 ->get();
@@ -710,6 +711,11 @@ class OrderController extends Controller
                         'city' => $order->address->city,
                         'region' => $order->address->region,
                         'postal_code' => $order->address->postal_code
+                    ] : null,
+                    'user' => $order->user ? [
+                        'id' => $order->user->id,
+                        'first_name' => $order->user->first_name,
+                        'last_name' => $order->user->last_name
                     ] : null,
                     'order_lines' => $order->orderLines->map(function ($line) {
                         return [

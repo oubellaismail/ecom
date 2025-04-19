@@ -14,6 +14,7 @@ const OrderValidation = () => {
     const [success, setSuccess] = useState('');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const ORDERS_PER_PAGE = 10;
 
     // Load orders on mount and when filters change
     useEffect(() => {
@@ -42,7 +43,7 @@ const OrderValidation = () => {
                     
                     console.log('Transformed orders:', transformedOrders);
                     setOrders(transformedOrders);
-                    setTotalPages(Math.ceil(transformedOrders.length / 10));
+                    setTotalPages(Math.ceil(transformedOrders.length / ORDERS_PER_PAGE));
                 } else {
                     setError(response.message || 'Error loading orders');
                 }
@@ -100,6 +101,10 @@ const OrderValidation = () => {
         
         return matchesSearch && matchesStatus;
     });
+
+    // Calculate paginated orders
+    const startIndex = (page - 1) * ORDERS_PER_PAGE;
+    const paginatedOrders = filteredOrders.slice(startIndex, startIndex + ORDERS_PER_PAGE);
 
     // Status Badge component
     const StatusBadge = ({ status }) => {
@@ -405,7 +410,7 @@ const OrderValidation = () => {
                                         <span className="visually-hidden">Loading...</span>
                                     </div>
                                 </div>
-                            ) : filteredOrders.length === 0 ? (
+                            ) : paginatedOrders.length === 0 ? (
                                 <div className="text-center py-4">
                                     <p className="text-muted">No orders found.</p>
                                 </div>
@@ -423,7 +428,7 @@ const OrderValidation = () => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {filteredOrders.map((order) => (
+                                            {paginatedOrders.map((order) => (
                                                 <tr key={order.id}>
                                                     <td>#{order.id}</td>
                                                     <td>{order.customer}</td>
