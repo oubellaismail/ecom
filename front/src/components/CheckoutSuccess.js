@@ -75,42 +75,6 @@ const CheckoutSuccess = () => {
                             Thank you for your purchase! Your order has been successfully placed.
                         </p>
 
-                        <div className="order-details p-5 mb-5" style={{ 
-                            background: 'rgba(255, 255, 255, 0.8)',
-                            backdropFilter: 'blur(10px)',
-                            borderRadius: '16px',
-                            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
-                            border: '1px solid rgba(0,0,0,0.05)'
-                        }}>
-                            <h3 className="mb-4" style={{ 
-                                color: '#495057',
-                                fontWeight: '600',
-                                fontSize: '1.5rem'
-                            }}>
-                                Order Details
-                            </h3>
-                            <div className="order-number">
-                                <span style={{ 
-                                    color: '#6c757d',
-                                    fontSize: '1.1rem',
-                                    display: 'block',
-                                    marginBottom: '0.5rem'
-                                }}>
-                                    Order Number
-                                </span>
-                                <h2 className="mt-2" style={{ 
-                                    background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
-                                    fontWeight: '700',
-                                    letterSpacing: '1px',
-                                    fontSize: '2rem',
-                                    margin: '0'
-                                }}>
-                                    {orderNumber}
-                                </h2>
-                            </div>
-                        </div>
 
                         <div className="action-buttons">
                             <Button 

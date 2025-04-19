@@ -75,7 +75,12 @@ class OrderController extends Controller
             'checkout_id' => $checkoutId
         ]);
         
-        // Initiate payment using service
+        // Special handling for COD
+        if ($request->payment_method_code === 'cod') {
+            return $this->processCODOrder($checkoutId, $payMethod->id, $checkoutData['data']);
+        }
+        
+        // For other payment methods, initiate payment using service
         try {
             $paymentService = $this->paymentResolver->resolve($request->payment_method_code);
             $paymentResponse = $paymentService->initiate(
@@ -91,7 +96,7 @@ class OrderController extends Controller
                 ], 400);
             }
 
-            Log::info('Check session:', [
+            Log::info('Payment response:', [
                 'paymentResponse' => $paymentResponse
             ]);
             
@@ -103,21 +108,16 @@ class OrderController extends Controller
                 $checkoutId
             );
             
-            // Return response with approval URL if needed
+            // Return response with approval URL
             $responseData = [
                 'checkout_id' => $checkoutId,
                 'payment_id' => $tempPayment->id,
                 'message' => 'Payment initiated'
             ];
             
-            // Add redirect URL if the payment method requires redirection
+            // Add redirect URL if provided
             if (isset($paymentResponse['approval_url']) && $paymentResponse['approval_url']) {
                 $responseData['redirect_url'] = $paymentResponse['approval_url'];
-            }
-            
-            // For COD, we can indicate that no redirect is required
-            if ($request->payment_method_code === 'cod') {
-                $responseData['needs_redirect'] = false;
             }
             
             return response()->json([
@@ -251,11 +251,6 @@ class OrderController extends Controller
      */
     public function handlePaymentCallback(Request $request)
     {
-
-        Log::info('Im here  cod payment :', [
-            'code' => 'code1'
-        ]);
-
         try {
             // Different payment providers will provide different parameters
             $paymentId = $request->get('token') ?? $request->get('session_id') ?? $request->get('payment_id');
@@ -267,10 +262,6 @@ class OrderController extends Controller
                     'message' => 'No payment identifier provided'
                 ], 400);
             }
-
-            Log::info('Im here  cod payment :', [
-                'code' => 'code2'
-            ]);
             
             // Find the payment by provider_payment_id
             $payment = Payment::where('provider_payment_id', $paymentId)->first();
@@ -282,10 +273,6 @@ class OrderController extends Controller
                     'message' => 'Payment record not found'
                 ], 404);
             }
-
-            Log::info('Im here  cod payment :', [
-                'code' => 'code3'
-            ]);
             
             // Get checkout details from payment
             $paymentDetails = json_decode($payment->details, true);
@@ -303,8 +290,6 @@ class OrderController extends Controller
             $checkoutSession = CheckoutSession::where('checkout_id', $checkoutId)
                 ->where('expires_at', '>', now())
                 ->first();
-
-            
                 
             $checkoutData = $checkoutSession ? json_decode($checkoutSession->data, true) : null;
             
@@ -316,36 +301,32 @@ class OrderController extends Controller
                 ], 400);
             }
             
-            // Get payment method and corresponding service
+            // Get payment method
             $paymentMethod = PaymentMethod::find($payment->payment_method_id);
-            $paymentService = $this->paymentResolver->resolve($paymentMethod->code);
-
-            // Capture the payment using the appropriate service
-            $captureData = $paymentService->capture($payment->provider_payment_id);
             
-            if (!$captureData['success']) {
-                Log::error('Payment callback: Payment capture failed', ['payment_id' => $payment->id]);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Payment capture failed',
-                    'errors' => $captureData['details'] ?? null
-                ], 400);
+            // Only capture payments for non-COD methods
+            $captureData = ['success' => true, 'transaction_id' => null, 'details' => []];
+            
+            if ($paymentMethod->code !== 'cod') {
+                $paymentService = $this->paymentResolver->resolve($paymentMethod->code);
+                $captureData = $paymentService->capture($payment->provider_payment_id);
+                
+                if (!$captureData['success']) {
+                    Log::error('Payment callback: Payment capture failed', ['payment_id' => $payment->id]);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Payment capture failed',
+                        'errors' => $captureData['details'] ?? null
+                    ], 400);
+                }
             }
             
             // Get or create shipping address
             $address = $this->getOrCreateAddress($checkoutData['shipping_address']);
-
-            Log::info('Im here  cod payment :', [
-                'code' => 'code'
-            ]);
             
             // Create order in transaction
-            return DB::transaction(function () use ($checkoutData, $payment, $captureData, $paymentDetails, $address) {
+            return DB::transaction(function () use ($checkoutData, $payment, $captureData, $paymentDetails, $address, $paymentMethod) {
                 $userId = auth()->id() ?? 1; // Default to 1 for guest or testing
-                
-                Log::info('Im here  cod payment :', [
-                    'checkdata' => $checkoutData
-                ]);
 
                 // Create the order
                 $order = ShopOrder::create([
@@ -379,24 +360,23 @@ class OrderController extends Controller
                 OrderStatusHistory::create([
                     'order_id' => $order->id,
                     'changed_at' => now(),
-                    'comment' => 'Order created with payment completed'
+                    'comment' => 'Order created' . ($paymentMethod->code === 'cod' ? ' with cash on delivery' : ' with payment completed')
                 ]);
                 
                 // Update payment with order ID and transaction details
+                // For COD, payment_status remains NOT_PAID
                 $payment->update([
                     'order_id' => $order->id,
-                    'payments_status_id' => $payment->payment_method_id ==PaymentMethod::COD ? PaymentStatus::NOT_PAID : PaymentStatus::PAID,
+                    'payments_status_id' => $paymentMethod->code === 'cod' ? PaymentStatus::NOT_PAID : PaymentStatus::PAID,
                     'transaction_id' => $captureData['transaction_id'],
-                    'paid_at' => now(),
+                    'paid_at' => $paymentMethod->code === 'cod' ? null : now(),
                     'details' => json_encode([
                         'checkout_id' => $paymentDetails['checkout_id'],
                         'payment_details' => $captureData['details']
                     ])
                 ]);
-
                 
                 return redirect(config('app.frontend_url') . '/checkout/success?order_number=' . $order->order_number);
-
             });
         } catch (\Exception $e) {
             Log::error('Payment callback error: ' . $e->getMessage(), [
@@ -447,34 +427,93 @@ class OrderController extends Controller
     }
     
     /**
-     * Handle COD specific order processing  
+     * Handle COD specific order processing
      */
-    public function processCODOrder(Request $request)
+    public function processCODOrder(string $checkoutId, int $paymentMethodId, array $checkoutData)
     {
+        Log::info('Processing COD order', ['checkout_id' => $checkoutId]);
+        
         try {
-            $payment = Payment::findOrFail($request->payment_id);
+            // Generate a unique provider payment ID for COD
+            $providerPaymentId = uniqid('COD-');
             
-            // Get checkout details from payment
-            $paymentDetails = json_decode($payment->details, true);
-            $checkoutId = $paymentDetails['checkout_id'] ?? null;
+            // Store a payment record
+            $payment = $this->storePayment(
+                $paymentMethodId,
+                $providerPaymentId,
+                $checkoutData['total_amount'],
+                $checkoutId
+            );
             
-            if (!$checkoutId) {
+            // Get or create address
+            $address = $this->getOrCreateAddress($checkoutData['shipping_address']);
+            
+            // Create order directly for COD
+            return DB::transaction(function () use ($checkoutData, $payment, $checkoutId, $address) {
+                $userId = auth()->id() ?? 1; // Default to 1 for guest or testing
+                
+                // Create the order
+                $order = ShopOrder::create([
+                    'user_id' => $userId,
+                    'order_number' => uniqid('ORD-'),
+                    'order_status_id' => OrderStatus::PENDING,
+                    'amount_before_discount' => $checkoutData['amount_before_discount'],
+                    'discount_id' => $checkoutData['discount_id'],
+                    'discount_amount' => $checkoutData['discount_amount'],
+                    'total_amount' => $checkoutData['total_amount'],
+                    'address_id' => $address->id,
+                    'notes' => $checkoutData['notes'] ?? null,
+                    'ordered_at' => now()
+                ]);
+                
+                // Process order lines
+                foreach ($checkoutData['order_lines'] as $line) {
+                    $order->orderLines()->create([
+                        'product_item_id' => $line['product_item_id'],
+                        'qty' => $line['qty'],
+                        'subtotal' => $line['subtotal']
+                    ]);
+                }
+                
+                // Apply discount if used
+                if (!empty($checkoutData['discount_id'])) {
+                    $this->applyDiscount($checkoutData['discount_id']);
+                }
+                
+                // Create order status history
+                OrderStatusHistory::create([
+                    'order_id' => $order->id,
+                    'changed_at' => now(),
+                    'comment' => 'Order created with cash on delivery'
+                ]);
+                
+                // Update payment with order ID
+                $payment->update([
+                    'order_id' => $order->id,
+                    'payments_status_id' => PaymentStatus::NOT_PAID,
+                    'details' => json_encode([
+                        'checkout_id' => $checkoutId
+                    ])
+                ]);
+                
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Checkout information not found'
-                ], 400);
-            }
-            
-            // Since this is COD, we'll call the callback handler directly
-            $callbackRequest = new Request(['payment_id' => $payment->provider_payment_id]);
-            return $this->handlePaymentCallback($callbackRequest);
+                    'success' => true,
+                    'data' => [
+                        'order_number' => $order->order_number,
+                        'redirect_url' => config('app.frontend_url') . '/checkout/success?order_number=' . $order->order_number
+                    ],
+                    'message' => 'COD order processed successfully'
+                ]);
+            });
             
         } catch (\Exception $e) {
-            Log::error('COD processing error: ' . $e->getMessage());
+            Log::error('COD processing error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
             
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while processing COD order'
+                'message' => 'An error occurred while processing COD order: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -512,12 +551,43 @@ class OrderController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => [
-                ''
-            ],
+            'data' => [],
             'message' => 'Order status updated', 
         ]);
     }
 
+    /**
+     * Update payment status (for marking COD as paid on delivery)
+     */
+    public function updatePaymentStatus(Request $request)
+    {
+        $validated = $request->validate([
+            'order_number' => 'required|exists:shop_orders,order_number',
+            'is_paid' => 'required|boolean'
+        ]);
 
+        $order = ShopOrder::where('order_number', $validated['order_number'])->firstOrFail();
+        $payment = Payment::where('order_id', $order->id)->firstOrFail();
+
+        // Only update status if it's COD or related payment methods
+        $paymentMethod = PaymentMethod::find($payment->payment_method_id);
+        if ($paymentMethod->code === 'cod') {
+            $newStatus = $validated['is_paid'] ? PaymentStatus::PAID : PaymentStatus::NOT_PAID;
+            
+            $payment->update([
+                'payments_status_id' => $newStatus,
+                'paid_at' => $validated['is_paid'] ? now() : null
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment status updated'
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Cannot update payment status for non-COD payment methods'
+        ], 400);
+    }
 }

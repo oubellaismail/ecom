@@ -50,8 +50,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
 });
 
-//paypal
-
 Route::prefix('api/paypal')->group(function () {
     Route::post('create', [PaypalController::class, 'createPayment']);
     Route::post('capture', [PaypalController::class, 'capturePayment']);
@@ -70,6 +68,8 @@ Route::prefix('payments')->group(function () {
     // COD specific processing
     Route::post('cod/process', [OrderController::class, 'processCODOrder']);
 });
+//paypal
+
 
 // Public routes
 
