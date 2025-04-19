@@ -664,4 +664,81 @@ class OrderController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get all orders for the orders page
+     */
+    public function index(Request $request)
+    {
+        try {
+            // Get authenticated user
+            $user = auth()->user();
+            
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthenticated'
+                ], 401);
+            }
+            
+            // Build the query with safe relationship loading
+            $orders = ShopOrder::where('user_id', $user->id)
+                ->with([
+                    'orderStatus:id,status,code',
+                    'orderLines:id,order_id,product_item_id,qty,subtotal',
+                    'orderLines.productItem:id,product_id,price',
+                    'orderLines.productItem.product:id,name',
+                    'address:id,address_line1,city,region,postal_code,country_id',
+                ])
+                ->orderBy('ordered_at', 'desc')
+                ->get();
+            
+            // Transform the data to ensure consistent response format
+            $transformedOrders = $orders->map(function ($order) {
+                return [
+                    'id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'ordered_at' => $order->ordered_at,
+                    'total_amount' => $order->total_amount,
+                    'order_status' => $order->orderStatus ? [
+                        'id' => $order->orderStatus->id,
+                        'status' => $order->orderStatus->status,
+                        'code' => $order->orderStatus->code
+                    ] : null,
+                    'address' => $order->address ? [
+                        'address_line1' => $order->address->address_line1,
+                        'city' => $order->address->city,
+                        'region' => $order->address->region,
+                        'postal_code' => $order->address->postal_code
+                    ] : null,
+                    'order_lines' => $order->orderLines->map(function ($line) {
+                        return [
+                            'id' => $line->id,
+                            'qty' => $line->qty,
+                            'subtotal' => $line->subtotal,
+                            'product' => $line->productItem && $line->productItem->product ? [
+                                'id' => $line->productItem->product->id,
+                                'name' => $line->productItem->product->name
+                            ] : null
+                        ];
+                    })
+                ];
+            });
+            
+            return response()->json([
+                'success' => true,
+                'data' => $transformedOrders
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching orders: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching orders',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

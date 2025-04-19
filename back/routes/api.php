@@ -29,6 +29,7 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/categories/random', [CategoryController::class, 'showByCategory']);
+    Route::get('/orders', [OrderController::class, 'index']);
     Route::get('/user/orders', [OrderController::class, 'getMyOrders']);
 
 

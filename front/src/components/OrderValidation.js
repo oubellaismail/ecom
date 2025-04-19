@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import orderService from '../api/orderService';
+import { orderApi } from '../api/orderService';
 import { useAuth } from '../context/AuthContext';
 
 const OrderValidation = () => {
@@ -21,13 +21,31 @@ const OrderValidation = () => {
             try {
                 setLoading(true);
                 setError('');
-                const response = await orderService.getOrders({
-                    page,
-                    status: statusFilter,
-                    search: searchTerm
-                });
-                setOrders(response.data.orders);
-                setTotalPages(response.data.totalPages);
+                console.log('Loading orders...');
+                const response = await orderApi.getMyOrders();
+                console.log('Orders response:', response);
+                
+                if (response.success) {
+                    // Transform the data to match our expected format
+                    const transformedOrders = response.data.map(order => ({
+                        id: order.order_number,
+                        customer: order.user ? `${order.user.first_name} ${order.user.last_name}` : 'Unknown Customer',
+                        date: order.ordered_at,
+                        amount: Number(order.total_amount) || 0,
+                        status: order.order_status?.code || 'pending',
+                        items: order.order_lines?.map(line => ({
+                            name: line.productItem?.product?.name || 'Unknown Product',
+                            quantity: line.qty,
+                            price: Number(line.subtotal / line.qty) || 0
+                        })) || []
+                    }));
+                    
+                    console.log('Transformed orders:', transformedOrders);
+                    setOrders(transformedOrders);
+                    setTotalPages(Math.ceil(transformedOrders.length / 10));
+                } else {
+                    setError(response.message || 'Error loading orders');
+                }
             } catch (error) {
                 setError('Error loading orders. Please try again.');
                 console.error('Orders error:', error);
@@ -47,10 +65,10 @@ const OrderValidation = () => {
             setLoading(true);
             setError('');
             setSuccess('');
-            const response = await orderService.updateOrderStatus(orderId, newStatus);
+            const response = await orderApi.updateOrderStatus(orderId, { order_status_code: newStatus.toLowerCase() });
 
             setOrders(orders.map(order =>
-                order.id === orderId ? response.data : order
+                order.id === orderId ? { ...order, status: newStatus } : order
             ));
 
             if (selectedOrder && selectedOrder.id === orderId) {
@@ -67,21 +85,37 @@ const OrderValidation = () => {
         }
     };
 
-    // Status Badge component (similar to the one in Dashboard)
+    // Filter orders based on search term and status filter
+    const filteredOrders = orders.filter(order => {
+        if (!order) return false;
+        
+        const searchTermLower = searchTerm.toLowerCase();
+        const customerName = (order.customer || '').toLowerCase();
+        const orderId = (order.id || '').toString();
+        const orderStatus = order.status || '';
+        
+        const matchesSearch = customerName.includes(searchTermLower) ||
+            orderId.includes(searchTermLower);
+        const matchesStatus = statusFilter === 'All' || orderStatus === statusFilter.toLowerCase();
+        
+        return matchesSearch && matchesStatus;
+    });
+
+    // Status Badge component
     const StatusBadge = ({ status }) => {
         const getBadgeStyle = () => {
             switch (status) {
-                case 'Delivered':
+                case 'delivered':
                     return { background: '#28a745', color: 'white' };
-                case 'Processing':
+                case 'processing':
                     return { background: '#ffc107', color: 'black' };
-                case 'Shipped':
+                case 'shipped':
                     return { background: '#17a2b8', color: 'white' };
-                case 'Pending':
+                case 'pending':
                     return { background: '#6c757d', color: 'white' };
-                case 'Cancelled':
+                case 'cancelled':
                     return { background: '#dc3545', color: 'white' };
-                case 'Validated':
+                case 'validated':
                     return { background: '#8e44ad', color: 'white' };
                 default:
                     return { background: '#6c757d', color: 'white' };
@@ -94,18 +128,79 @@ const OrderValidation = () => {
                 borderRadius: '8px',
                 fontSize: '0.75rem'
             }}>
-                {status}
+                {status.charAt(0).toUpperCase() + status.slice(1)}
             </span>
         );
     };
 
-    // Filter orders based on search term and status filter
-    const filteredOrders = orders.filter(order => {
-        const matchesSearch = order.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            order.id.toString().includes(searchTerm);
-        const matchesStatus = statusFilter === 'All' || order.status === statusFilter;
-        return matchesSearch && matchesStatus;
-    });
+    // Order Details Modal component
+    const OrderDetailsModal = ({ order, onClose }) => {
+        if (!order) return null;
+
+        return (
+            <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                <div className="modal-dialog modal-lg">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h5 className="modal-title">Order #{order.id} Details</h5>
+                            <button type="button" className="btn-close" onClick={onClose}></button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="row mb-4">
+                                <div className="col-md-6">
+                                    <h6 className="text-muted">Order Date</h6>
+                                    <p>{new Date(order.date).toLocaleDateString()}</p>
+                                </div>
+                                <div className="col-md-6">
+                                    <h6 className="text-muted">Status</h6>
+                                    <p><StatusBadge status={order.status} /></p>
+                                </div>
+                            </div>
+
+                            <div className="row mb-4">
+                                <div className="col-12">
+                                    <h6 className="text-muted">Customer Information</h6>
+                                    <p>{order.customer}</p>
+                                </div>
+                            </div>
+
+                            <div className="table-responsive mb-4">
+                                <table className="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Quantity</th>
+                                            <th>Price</th>
+                                            <th>Subtotal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {order.items?.map((item, index) => (
+                                            <tr key={index}>
+                                                <td>{item.name}</td>
+                                                <td>{item.quantity}</td>
+                                                <td>${item.price.toFixed(2)}</td>
+                                                <td>${(item.price * item.quantity).toFixed(2)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colSpan="3" className="text-end fw-bold">Total:</td>
+                                            <td className="fw-bold">${(order.amount || 0).toFixed(2)}</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button type="button" className="btn btn-secondary" onClick={onClose}>Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     // Icons
     const SearchIcon = () => (
@@ -125,17 +220,37 @@ const OrderValidation = () => {
             minHeight: '100vh'
         }}>
             {error && (
-                <div className="alert alert-danger alert-dismissible fade show" role="alert">
+                <div className="alert alert-danger alert-dismissible fade show" role="alert" style={{
+                    borderRadius: '12px',
+                    border: 'none',
+                    background: 'rgba(255, 77, 77, 0.1)',
+                    backdropFilter: 'blur(5px)',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                }}>
                     {error}
                     <button type="button" className="btn-close" onClick={() => setError('')}></button>
                 </div>
             )}
 
             {success && (
-                <div className="alert alert-success alert-dismissible fade show" role="alert">
+                <div className="alert alert-success alert-dismissible fade show" role="alert" style={{
+                    borderRadius: '12px',
+                    border: 'none',
+                    background: 'rgba(40, 167, 69, 0.1)',
+                    backdropFilter: 'blur(5px)',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                }}>
                     {success}
                     <button type="button" className="btn-close" onClick={() => setSuccess('')}></button>
                 </div>
+            )}
+
+            {/* Order Details Modal */}
+            {selectedOrder && (
+                <OrderDetailsModal 
+                    order={selectedOrder} 
+                    onClose={() => setSelectedOrder(null)} 
+                />
             )}
 
             <div className="row">
@@ -229,22 +344,42 @@ const OrderValidation = () => {
                     }}>
                         <div className="card-body p-4">
                             <div className="d-flex justify-content-between align-items-center mb-4">
-                                <h2 className="mb-0">Order Management</h2>
+                                <h2 className="mb-0" style={{
+                                    fontWeight: '800',
+                                    fontSize: '1.75rem',
+                                    background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent'
+                                }}>
+                                    Order Management
+                                </h2>
                                 <div className="d-flex gap-2">
                                     <select
                                         className="form-select"
                                         value={statusFilter}
                                         onChange={(e) => setStatusFilter(e.target.value)}
+                                        style={{
+                                            borderRadius: '12px',
+                                            border: '1px solid rgba(0,0,0,0.1)',
+                                            background: 'rgba(255,255,255,0.9)',
+                                            backdropFilter: 'blur(5px)'
+                                        }}
                                     >
                                         <option value="All">All Status</option>
-                                        <option value="Pending">Pending</option>
-                                        <option value="Processing">Processing</option>
-                                        <option value="Shipped">Shipped</option>
-                                        <option value="Delivered">Delivered</option>
-                                        <option value="Cancelled">Cancelled</option>
+                                        <option value="pending">Pending</option>
+                                        <option value="processing">Processing</option>
+                                        <option value="shipped">Shipped</option>
+                                        <option value="delivered">Delivered</option>
+                                        <option value="cancelled">Cancelled</option>
+                                        <option value="validated">Validated</option>
                                     </select>
                                     <div className="input-group">
-                                        <span className="input-group-text">
+                                        <span className="input-group-text" style={{
+                                            borderRadius: '12px 0 0 12px',
+                                            border: '1px solid rgba(0,0,0,0.1)',
+                                            background: 'rgba(255,255,255,0.9)',
+                                            backdropFilter: 'blur(5px)'
+                                        }}>
                                             <SearchIcon />
                                         </span>
                                         <input
@@ -253,6 +388,12 @@ const OrderValidation = () => {
                                             placeholder="Search orders..."
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
+                                            style={{
+                                                borderRadius: '0 12px 12px 0',
+                                                border: '1px solid rgba(0,0,0,0.1)',
+                                                background: 'rgba(255,255,255,0.9)',
+                                                backdropFilter: 'blur(5px)'
+                                            }}
                                         />
                                     </div>
                                 </div>
@@ -273,35 +414,53 @@ const OrderValidation = () => {
                                     <table className="table">
                                         <thead>
                                             <tr>
-                                                <th>Order ID</th>
-                                                <th>Customer</th>
-                                                <th>Date</th>
-                                                <th>Amount</th>
-                                                <th>Status</th>
-                                                <th>Actions</th>
+                                                <th style={{ fontWeight: '500' }}>Order ID</th>
+                                                <th style={{ fontWeight: '500' }}>Customer</th>
+                                                <th style={{ fontWeight: '500' }}>Date</th>
+                                                <th style={{ fontWeight: '500' }}>Amount</th>
+                                                <th style={{ fontWeight: '500' }}>Status</th>
+                                                <th style={{ fontWeight: '500' }}>Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {filteredOrders.map((order) => (
                                                 <tr key={order.id}>
-                                                    <td>{order.id}</td>
+                                                    <td>#{order.id}</td>
                                                     <td>{order.customer}</td>
                                                     <td>{new Date(order.date).toLocaleDateString()}</td>
-                                                    <td>${order.amount.toFixed(2)}</td>
+                                                    <td>${(order.amount || 0).toFixed(2)}</td>
                                                     <td><StatusBadge status={order.status} /></td>
                                                     <td>
                                                         <div className="d-flex gap-2">
                                                             <button
-                                                                className="btn btn-sm btn-primary"
+                                                                className="btn btn-sm"
                                                                 onClick={() => setSelectedOrder(order)}
                                                                 disabled={loading}
+                                                                style={{
+                                                                    background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
+                                                                    color: 'white',
+                                                                    fontWeight: '500',
+                                                                    padding: '4px 10px',
+                                                                    borderRadius: '8px',
+                                                                    fontSize: '0.8rem',
+                                                                    border: 'none'
+                                                                }}
                                                             >
                                                                 View Details
                                                             </button>
                                                             <button
-                                                                className="btn btn-sm btn-success"
-                                                                onClick={() => updateOrderStatus(order.id, 'Validated')}
-                                                                disabled={loading || order.status === 'Validated'}
+                                                                className="btn btn-sm"
+                                                                onClick={() => updateOrderStatus(order.id, 'validated')}
+                                                                disabled={loading || order.status === 'validated'}
+                                                                style={{
+                                                                    background: 'rgba(236, 236, 236, 0.7)',
+                                                                    color: '#333',
+                                                                    fontWeight: '500',
+                                                                    padding: '4px 10px',
+                                                                    borderRadius: '8px',
+                                                                    fontSize: '0.8rem',
+                                                                    border: 'none'
+                                                                }}
                                                             >
                                                                 Validate
                                                             </button>
@@ -319,19 +478,38 @@ const OrderValidation = () => {
                                 <nav>
                                     <ul className="pagination">
                                         <li className={`page-item ${page === 1 ? 'disabled' : ''}`}>
-                                            <button className="page-link" onClick={() => setPage(page - 1)}>
+                                            <button className="page-link" onClick={() => setPage(page - 1)} style={{
+                                                borderRadius: '8px',
+                                                margin: '0 4px',
+                                                border: '1px solid rgba(0,0,0,0.1)',
+                                                background: 'rgba(255,255,255,0.9)',
+                                                backdropFilter: 'blur(5px)'
+                                            }}>
                                                 Previous
                                             </button>
                                         </li>
                                         {[...Array(totalPages)].map((_, i) => (
                                             <li key={i} className={`page-item ${page === i + 1 ? 'active' : ''}`}>
-                                                <button className="page-link" onClick={() => setPage(i + 1)}>
+                                                <button className="page-link" onClick={() => setPage(i + 1)} style={{
+                                                    borderRadius: '8px',
+                                                    margin: '0 4px',
+                                                    border: '1px solid rgba(0,0,0,0.1)',
+                                                    background: page === i + 1 ? 'linear-gradient(90deg, #ff4d4d, #f9cb28)' : 'rgba(255,255,255,0.9)',
+                                                    color: page === i + 1 ? 'white' : '#333',
+                                                    backdropFilter: 'blur(5px)'
+                                                }}>
                                                     {i + 1}
                                                 </button>
                                             </li>
                                         ))}
                                         <li className={`page-item ${page === totalPages ? 'disabled' : ''}`}>
-                                            <button className="page-link" onClick={() => setPage(page + 1)}>
+                                            <button className="page-link" onClick={() => setPage(page + 1)} style={{
+                                                borderRadius: '8px',
+                                                margin: '0 4px',
+                                                border: '1px solid rgba(0,0,0,0.1)',
+                                                background: 'rgba(255,255,255,0.9)',
+                                                backdropFilter: 'blur(5px)'
+                                            }}>
                                                 Next
                                             </button>
                                         </li>

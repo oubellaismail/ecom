@@ -177,7 +177,7 @@ const Dashboard = () => {
                   Products
                 </Link>
                 <Link
-                  to="/order"
+                  to="/orders"
                   className="nav-link text-start py-3 px-4 mb-2"
                   style={{
                     borderRadius: '12px',

@@ -127,10 +127,21 @@ export const orderApi = {
     // Get user's orders
     getMyOrders: async () => {
         try {
-            const response = await axiosInstance.get('/user/orders');
+            const response = await axiosInstance.get('/orders');
             return response.data;
         } catch (error) {
             console.error('Error fetching orders:', error);
+            throw error;
+        }
+    },
+
+    // Get all orders for the orders page
+    getAllOrders: async () => {
+        try {
+            const response = await axiosInstance.get('/orders');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching all orders:', error);
             throw error;
         }
     }
