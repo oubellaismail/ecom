@@ -31,15 +31,56 @@ const Navbar = () => {
   const handleSearch = async (e) => {
     if (e.key === 'Enter' && searchTerm.trim()) {
       try {
-        const response = await productApi.searchProducts(searchTerm.trim());
-        setSearchResults(response.data || []);
+        console.log('Searching for:', searchTerm.trim());
+        const response = await productApi.getProducts({ search: searchTerm.trim() });
+        console.log('Search response:', response);
+
+        // Handle different response formats
+        let results = [];
+        if (response && response.success && response.data) {
+          results = response.data;
+        } else if (Array.isArray(response)) {
+          results = response;
+        } else if (response.data) {
+          results = Array.isArray(response.data) ? response.data : [response.data];
+        }
+
+        console.log('Processed results:', results);
+
+        // Transform results to ensure consistent structure
+        const transformedResults = results.map(product => ({
+          id: product.id,
+          name: product.name,
+          slug: product.slug,
+          product_item: {
+            price: product.product_item?.price || 0,
+            product_image: product.product_item?.product_image || '/placeholder-image.jpg'
+          }
+        }));
+
+        setSearchResults(transformedResults);
         setShowResults(true);
       } catch (error) {
         console.error('Error searching products:', error);
         setSearchResults([]);
+        setShowResults(false);
       }
     }
   };
+
+  // Add click outside handler to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showResults && !event.target.closest('.search-container')) {
+        setShowResults(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showResults]);
 
   const handleLogout = () => {
     logout();
@@ -104,13 +145,19 @@ const Navbar = () => {
           </ul>
 
           {/* Search Bar */}
-          <form className="d-flex position-relative my-3 my-lg-0 mx-lg-auto" style={{ maxWidth: '300px' }}>
+          <form className="d-flex position-relative my-3 my-lg-0 mx-lg-auto search-container" style={{ maxWidth: '300px' }}>
             <input
               type="search"
               className="form-control pe-5"
               placeholder="Search products..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                if (e.target.value.trim() === '') {
+                  setShowResults(false);
+                  setSearchResults([]);
+                }
+              }}
               onKeyPress={handleSearch}
               style={{
                 borderRadius: '25px',
@@ -141,13 +188,13 @@ const Navbar = () => {
                     onClick={() => setShowResults(false)}
                   >
                     <img
-                      src={product.image || '/placeholder-image.jpg'}
+                      src={product.product_item?.product_image || '/placeholder-image.jpg'}
                       alt={product.name}
                       style={{ width: '40px', height: '40px', objectFit: 'cover', marginRight: '10px' }}
                     />
                     <div>
                       <div className="fw-bold">{product.name}</div>
-                      <div className="text-muted small">${product.price}</div>
+                      <div className="text-muted small">${product.product_item?.price || '0.00'}</div>
                     </div>
                   </Link>
                 ))}
