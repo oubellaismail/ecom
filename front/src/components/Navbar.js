@@ -21,7 +21,7 @@ const UserIcon = () => (
 );
 
 const Navbar = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const { cart, getCartCount } = useCart();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -256,43 +256,68 @@ const Navbar = () => {
 
           {/* Right actions */}
           <div className="d-flex align-items-center ms-lg-auto mt-3 mt-lg-0">
-            {user && (
-              <>
-                <Link to="/profile" className="btn p-2 me-2 rounded-circle" style={{
-                  background: 'rgba(236, 236, 236, 0.7)',
-                  color: '#333'
-                }}>
-                  <UserIcon />
-                </Link>
-                <Link to="/cart" className="btn p-2 me-2 rounded-circle position-relative" style={{
-                  background: 'rgba(236, 236, 236, 0.7)',
-                  color: '#333'
-                }}>
-                  <CartIcon />
-                  {getCartCount() > 0 && (
-                    <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill" style={{
-                      background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
-                      fontSize: '0.65rem'
-                    }}>
-                      {getCartCount()}
-                    </span>
-                  )}
-                </Link>
-              </>
-            )}
-
             {user ? (
-              <Link onClick={handleLogout} to="/" className="btn ms-2" style={{
-                background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
-                color: 'white',
-                fontWeight: '500',
-                padding: '0.5rem 1.25rem',
-                borderRadius: '25px',
-                boxShadow: '0 4px 15px rgba(255, 77, 77, 0.2)'
-              }}>
-                Logout
-              </Link>
+              isAdmin ? (
+                // Admin buttons
+                <>
+                  <Link to="/dashboard" className="btn me-2" style={{
+                    background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
+                    color: 'white',
+                    fontWeight: '500',
+                    padding: '0.5rem 1.25rem',
+                    borderRadius: '25px',
+                    boxShadow: '0 4px 15px rgba(255, 77, 77, 0.2)'
+                  }}>
+                    Dashboard
+                  </Link>
+                  <Link onClick={handleLogout} to="/" className="btn" style={{
+                    background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
+                    color: 'white',
+                    fontWeight: '500',
+                    padding: '0.5rem 1.25rem',
+                    borderRadius: '25px',
+                    boxShadow: '0 4px 15px rgba(255, 77, 77, 0.2)'
+                  }}>
+                    Logout
+                  </Link>
+                </>
+              ) : (
+                // Regular user buttons
+                <>
+                  <Link to="/profile" className="btn p-2 me-2 rounded-circle" style={{
+                    background: 'rgba(236, 236, 236, 0.7)',
+                    color: '#333'
+                  }}>
+                    <UserIcon />
+                  </Link>
+                  <Link to="/cart" className="btn p-2 me-2 rounded-circle position-relative" style={{
+                    background: 'rgba(236, 236, 236, 0.7)',
+                    color: '#333'
+                  }}>
+                    <CartIcon />
+                    {getCartCount() > 0 && (
+                      <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill" style={{
+                        background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
+                        fontSize: '0.65rem'
+                      }}>
+                        {getCartCount()}
+                      </span>
+                    )}
+                  </Link>
+                  <Link onClick={handleLogout} to="/" className="btn" style={{
+                    background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
+                    color: 'white',
+                    fontWeight: '500',
+                    padding: '0.5rem 1.25rem',
+                    borderRadius: '25px',
+                    boxShadow: '0 4px 15px rgba(255, 77, 77, 0.2)'
+                  }}>
+                    Logout
+                  </Link>
+                </>
+              )
             ) : (
+              // Guest buttons
               <>
                 <Link to="/signup" className="btn ms-2" style={{
                   background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
