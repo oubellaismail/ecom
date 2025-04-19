@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import orderService from '../api/orderService';
-import { logoutUser } from '../api/authService';
 import { useAuth } from '../context/AuthContext';
+import { orderApi } from '../api/orderService';
 
 const Profile = () => {
     const navigate = useNavigate();
@@ -14,10 +13,16 @@ const Profile = () => {
 
     useEffect(() => {
         const loadOrders = async () => {
+            if (!user) return;
+            
             try {
                 setLoading(true);
-                const response = await orderService.getUserOrders();
-                setOrders(response.data);
+                const response = await orderApi.getMyOrders();
+                if (response.success) {
+                    setOrders(response.data);
+                } else {
+                    setError(response.message || 'Error loading orders');
+                }
             } catch (error) {
                 setError('Error loading orders. Please try again.');
                 console.error('Orders error:', error);
@@ -26,17 +31,15 @@ const Profile = () => {
             }
         };
 
-        if (user) {
-            loadOrders();
-        }
+        loadOrders();
     }, [user]);
 
-    // Commandes à afficher - limitées ou toutes
+    // Orders to display - limited or all
     const displayedOrders = showAllOrders
         ? orders
         : orders.slice(0, 4);
 
-    // Composant pour le badge de statut
+    // Status badge component
     const StatusBadge = ({ status }) => {
         let badgeClass = 'badge ';
 
@@ -57,17 +60,16 @@ const Profile = () => {
         return <span className={badgeClass}>{status}</span>;
     };
 
-    // Fonction pour basculer l'affichage
+    // Toggle display function
     const toggleOrdersDisplay = () => {
         setShowAllOrders(!showAllOrders);
     };
 
-    // Fonction de déconnexion
+    // Logout function
     const handleLogout = async () => {
         try {
             setLoading(true);
-            await logoutUser();
-            logout();
+            await logout();
             navigate('/');
         } catch (error) {
             setError('Error logging out. Please try again.');
@@ -78,7 +80,6 @@ const Profile = () => {
     };
 
     if (!user) {
-        navigate('/signin');
         return null;
     }
 
@@ -199,15 +200,15 @@ const Profile = () => {
                                         <tbody>
                                             {displayedOrders.map((order) => (
                                                 <tr key={order.id}>
-                                                    <td>#{order.id}</td>
-                                                    <td>{new Date(order.created_at).toLocaleDateString()}</td>
-                                                    <td>${order.total_amount.toFixed(2)}</td>
+                                                    <td>#{order.order_number}</td>
+                                                    <td>{new Date(order.ordered_at).toLocaleDateString()}</td>
+                                                    <td>${Number(order.total_amount).toFixed(2)}</td>
                                                     <td>
-                                                        <StatusBadge status={order.status} />
+                                                        <StatusBadge status={order.order_status?.code} />
                                                     </td>
                                                     <td>
                                                         <Link
-                                                            to={`/order/${order.id}`}
+                                                            to={`/order/${order.order_number}`}
                                                             className="btn btn-sm"
                                                             style={{
                                                                 background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',

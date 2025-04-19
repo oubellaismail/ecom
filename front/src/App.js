@@ -75,9 +75,7 @@ function App() {
                 <Route
                   path="/profile"
                   element={
-                    <ProtectedAdminRoute>
-                      <Profile />
-                    </ProtectedAdminRoute>
+                    <Profile />
                   }
                 />
                 <Route path="/" element={<HomePage />} />
