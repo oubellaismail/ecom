@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -27,12 +27,39 @@ const Navbar = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
-  const handleSearch = async (e) => {
-    if (e.key === 'Enter' && searchTerm.trim()) {
+  // Helper function to normalize search terms
+  const normalizeSearchTerm = (term) => {
+    return term
+      .toLowerCase()
+      .replace(/\s+/g, '') // Remove all spaces
+      .replace(/[^a-z0-9]/g, ''); // Remove special characters
+  };
+
+  // Helper function to check if a product matches the search term
+  const isProductMatch = (product, searchTerm) => {
+    const normalizedSearch = normalizeSearchTerm(searchTerm);
+    const normalizedName = normalizeSearchTerm(product.name);
+    const normalizedDescription = normalizeSearchTerm(product.description || '');
+
+    return normalizedName.includes(normalizedSearch) ||
+      normalizedDescription.includes(normalizedSearch);
+  };
+
+  // Debounced search function
+  const debouncedSearch = useCallback(
+    async (term) => {
+      if (!term.trim()) {
+        setSearchResults([]);
+        setShowResults(false);
+        return;
+      }
+
       try {
-        console.log('Searching for:', searchTerm.trim());
-        const response = await productApi.getProducts({ search: searchTerm.trim() });
+        setIsSearching(true);
+        console.log('Searching for:', term.trim());
+        const response = await productApi.getProducts();
         console.log('Search response:', response);
 
         // Handle different response formats
@@ -45,10 +72,15 @@ const Navbar = () => {
           results = Array.isArray(response.data) ? response.data : [response.data];
         }
 
-        console.log('Processed results:', results);
+        // Filter results based on normalized search term
+        const filteredResults = results.filter(product =>
+          isProductMatch(product, term)
+        );
+
+        console.log('Filtered results:', filteredResults);
 
         // Transform results to ensure consistent structure
-        const transformedResults = results.map(product => ({
+        const transformedResults = filteredResults.map(product => ({
           id: product.id,
           name: product.name,
           slug: product.slug,
@@ -64,9 +96,21 @@ const Navbar = () => {
         console.error('Error searching products:', error);
         setSearchResults([]);
         setShowResults(false);
+      } finally {
+        setIsSearching(false);
       }
-    }
-  };
+    },
+    []
+  );
+
+  // Debounce effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      debouncedSearch(searchTerm);
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, debouncedSearch]);
 
   // Add click outside handler to close dropdown
   useEffect(() => {
@@ -145,7 +189,11 @@ const Navbar = () => {
           </ul>
 
           {/* Search Bar */}
-          <form className="d-flex position-relative my-3 my-lg-0 mx-lg-auto search-container" style={{ maxWidth: '300px' }}>
+          <form
+            className="d-flex position-relative my-3 my-lg-0 mx-lg-auto search-container"
+            style={{ maxWidth: '300px' }}
+            onSubmit={(e) => e.preventDefault()}
+          >
             <input
               type="search"
               className="form-control pe-5"
@@ -158,7 +206,6 @@ const Navbar = () => {
                   setSearchResults([]);
                 }
               }}
-              onKeyPress={handleSearch}
               style={{
                 borderRadius: '25px',
                 padding: '10px 15px',
@@ -169,14 +216,19 @@ const Navbar = () => {
             <button
               className="btn position-absolute end-0 top-0 bottom-0"
               type="button"
-              onClick={() => searchTerm.trim() && handleSearch({ key: 'Enter' })}
               style={{
                 border: 'none',
                 background: 'transparent',
                 color: '#555'
               }}
             >
-              <i className="bi bi-search"></i>
+              {isSearching ? (
+                <div className="spinner-border spinner-border-sm" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+              ) : (
+                <i className="bi bi-search"></i>
+              )}
             </button>
             {showResults && searchResults.length > 0 && (
               <div className="position-absolute top-100 start-0 end-0 mt-1 bg-white rounded shadow-lg" style={{ zIndex: 1000 }}>
