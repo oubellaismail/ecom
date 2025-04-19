@@ -84,9 +84,7 @@ function App() {
                   <Route
                     path="/edit-profile"
                     element={
-                      <ProtectedAdminRoute>
                         <EditProfile />
-                      </ProtectedAdminRoute>
                     }
                   />
                   <Route path="/about" element={<About />} />
