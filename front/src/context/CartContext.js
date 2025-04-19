@@ -6,7 +6,7 @@ const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
     const [cart, setCart] = useState([]);
-    const { isLoggedIn, user } = useAuth();
+    const { user } = useAuth();
 
     // Load cart from localStorage on initial render and when user changes
     useEffect(() => {
@@ -19,6 +19,7 @@ export const CartProvider = ({ children }) => {
         if (result.success) {
             setCart(result.cart);
         }
+        return result;
     };
 
     const removeFromCart = (itemId) => {
@@ -26,6 +27,7 @@ export const CartProvider = ({ children }) => {
         if (result.success) {
             setCart(result.cart);
         }
+        return result;
     };
 
     const updateQuantity = (itemId, quantity) => {
@@ -33,6 +35,7 @@ export const CartProvider = ({ children }) => {
         if (result.success) {
             setCart(result.cart);
         }
+        return result;
     };
 
     const clearCart = () => {
@@ -40,6 +43,11 @@ export const CartProvider = ({ children }) => {
         if (result.success) {
             setCart([]);
         }
+        return result;
+    };
+
+    const getCartCount = () => {
+        return cart.reduce((sum, item) => sum + item.quantity, 0);
     };
 
     return (
@@ -48,7 +56,8 @@ export const CartProvider = ({ children }) => {
             addToCart,
             removeFromCart,
             updateQuantity,
-            clearCart
+            clearCart,
+            getCartCount
         }}>
             {children}
         </CartContext.Provider>

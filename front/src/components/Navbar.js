@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import cartService from '../api/cartService';
+import { useCart } from '../context/CartContext';
 import { productApi } from '../api/productService';
 
 // Simple SVG icons
@@ -22,40 +22,109 @@ const UserIcon = () => (
 
 const Navbar = () => {
   const { user, logout } = useAuth();
+  const { cart, getCartCount } = useCart();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [cartCount, setCartCount] = useState(0);
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
-  useEffect(() => {
-    const fetchCartCount = async () => {
-      try {
-        const cart = await cartService.getCart();
-        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-        setCartCount(totalItems);
-      } catch (error) {
-        console.error('Error fetching cart:', error);
+  // Helper function to normalize search terms
+  const normalizeSearchTerm = (term) => {
+    return term
+      .toLowerCase()
+      .replace(/\s+/g, '') // Remove all spaces
+      .replace(/[^a-z0-9]/g, ''); // Remove special characters
+  };
+
+  // Helper function to check if a product matches the search term
+  const isProductMatch = (product, searchTerm) => {
+    const normalizedSearch = normalizeSearchTerm(searchTerm);
+    const normalizedName = normalizeSearchTerm(product.name);
+    const normalizedDescription = normalizeSearchTerm(product.description || '');
+
+    return normalizedName.includes(normalizedSearch) ||
+      normalizedDescription.includes(normalizedSearch);
+  };
+
+  // Debounced search function
+  const debouncedSearch = useCallback(
+    async (term) => {
+      if (!term.trim()) {
+        setSearchResults([]);
+        setShowResults(false);
+        return;
       }
-    };
 
-    if (user) {
-      fetchCartCount();
-    }
-  }, [user]);
-
-  const handleSearch = async (e) => {
-    if (e.key === 'Enter' && searchTerm.trim()) {
       try {
-        const response = await productApi.searchProducts(searchTerm.trim());
-        setSearchResults(response.data || []);
+        setIsSearching(true);
+        console.log('Searching for:', term.trim());
+        const response = await productApi.getProducts();
+        console.log('Search response:', response);
+
+        // Handle different response formats
+        let results = [];
+        if (response && response.success && response.data) {
+          results = response.data;
+        } else if (Array.isArray(response)) {
+          results = response;
+        } else if (response.data) {
+          results = Array.isArray(response.data) ? response.data : [response.data];
+        }
+
+        // Filter results based on normalized search term
+        const filteredResults = results.filter(product =>
+          isProductMatch(product, term)
+        );
+
+        console.log('Filtered results:', filteredResults);
+
+        // Transform results to ensure consistent structure
+        const transformedResults = filteredResults.map(product => ({
+          id: product.id,
+          name: product.name,
+          slug: product.slug,
+          product_item: {
+            price: product.product_item?.price || 0,
+            product_image: product.product_item?.product_image || '/placeholder-image.jpg'
+          }
+        }));
+
+        setSearchResults(transformedResults);
         setShowResults(true);
       } catch (error) {
         console.error('Error searching products:', error);
         setSearchResults([]);
+        setShowResults(false);
+      } finally {
+        setIsSearching(false);
       }
-    }
-  };
+    },
+    []
+  );
+
+  // Debounce effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      debouncedSearch(searchTerm);
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, debouncedSearch]);
+
+  // Add click outside handler to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showResults && !event.target.closest('.search-container')) {
+        setShowResults(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showResults]);
 
   const handleLogout = () => {
     logout();
@@ -120,14 +189,23 @@ const Navbar = () => {
           </ul>
 
           {/* Search Bar */}
-          <form className="d-flex position-relative my-3 my-lg-0 mx-lg-auto" style={{ maxWidth: '300px' }}>
+          <form
+            className="d-flex position-relative my-3 my-lg-0 mx-lg-auto search-container"
+            style={{ maxWidth: '300px' }}
+            onSubmit={(e) => e.preventDefault()}
+          >
             <input
               type="search"
               className="form-control pe-5"
               placeholder="Search products..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyPress={handleSearch}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                if (e.target.value.trim() === '') {
+                  setShowResults(false);
+                  setSearchResults([]);
+                }
+              }}
               style={{
                 borderRadius: '25px',
                 padding: '10px 15px',
@@ -138,14 +216,19 @@ const Navbar = () => {
             <button
               className="btn position-absolute end-0 top-0 bottom-0"
               type="button"
-              onClick={() => searchTerm.trim() && handleSearch({ key: 'Enter' })}
               style={{
                 border: 'none',
                 background: 'transparent',
                 color: '#555'
               }}
             >
-              <i className="bi bi-search"></i>
+              {isSearching ? (
+                <div className="spinner-border spinner-border-sm" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+              ) : (
+                <i className="bi bi-search"></i>
+              )}
             </button>
             {showResults && searchResults.length > 0 && (
               <div className="position-absolute top-100 start-0 end-0 mt-1 bg-white rounded shadow-lg" style={{ zIndex: 1000 }}>
@@ -157,13 +240,13 @@ const Navbar = () => {
                     onClick={() => setShowResults(false)}
                   >
                     <img
-                      src={product.image || '/placeholder-image.jpg'}
+                      src={product.product_item?.product_image || '/placeholder-image.jpg'}
                       alt={product.name}
                       style={{ width: '40px', height: '40px', objectFit: 'cover', marginRight: '10px' }}
                     />
                     <div>
                       <div className="fw-bold">{product.name}</div>
-                      <div className="text-muted small">${product.price}</div>
+                      <div className="text-muted small">${product.product_item?.price || '0.00'}</div>
                     </div>
                   </Link>
                 ))}
@@ -186,12 +269,12 @@ const Navbar = () => {
                   color: '#333'
                 }}>
                   <CartIcon />
-                  {cartCount > 0 && (
+                  {getCartCount() > 0 && (
                     <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill" style={{
                       background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
                       fontSize: '0.65rem'
                     }}>
-                      {cartCount}
+                      {getCartCount()}
                     </span>
                   )}
                 </Link>

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import productService from '../api/productService';
-import cartService from '../api/cartService';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
+import Notification from './Notification';
 
 const AllProducts = () => {
     const [products, setProducts] = useState([]);
@@ -11,12 +12,15 @@ const AllProducts = () => {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
+    const [currentSearchTerm, setCurrentSearchTerm] = useState(''); // New state to store the current search term
     const [categoryFilter, setCategoryFilter] = useState('All');
     const [sortBy, setSortBy] = useState('name');
     const [sortOrder, setSortOrder] = useState('asc');
     const [categories, setCategories] = useState([]);
+    const [notification, setNotification] = useState(null);
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { addToCart } = useCart();
 
     const handleAddToCart = async (product) => {
         if (!user) {
@@ -34,15 +38,24 @@ const AllProducts = () => {
                 size: product.category?.name || product.category_name || product.category_slug
             };
 
-            const result = await cartService.addToCart(cartItem);
+            const result = addToCart(cartItem);
             if (result.success) {
-                alert('Product added to cart successfully!');
+                setNotification({
+                    message: 'Product added to cart successfully!',
+                    type: 'success'
+                });
             } else {
-                alert(result.error || 'Error adding product to cart. Please try again.');
+                setNotification({
+                    message: result.error || 'Error adding product to cart. Please try again.',
+                    type: 'error'
+                });
             }
         } catch (error) {
             console.error('Error adding to cart:', error);
-            alert('Error adding product to cart. Please try again.');
+            setNotification({
+                message: 'Error adding product to cart. Please try again.',
+                type: 'error'
+            });
         }
     };
 
@@ -54,17 +67,49 @@ const AllProducts = () => {
             // Fetch products with filters
             const response = await productService.getProducts({
                 page,
-                search: searchTerm,
+                search: currentSearchTerm, // Using currentSearchTerm instead of searchTerm
                 category: categoryFilter === 'All' ? '' : categoryFilter,
                 sortBy,
                 sortOrder
             });
 
-            console.log('API Response:', response); // Debug log
+            console.log('API Response:', response);
 
             // Handle the response based on its structure
             if (response && response.success && response.data) {
-                setProducts(response.data);
+                let products = response.data;
+
+                // Client-side sorting as fallback
+                if (products.length > 0) {
+                    products.sort((a, b) => {
+                        let aValue, bValue;
+
+                        switch (sortBy) {
+                            case 'name':
+                                aValue = a.name.toLowerCase();
+                                bValue = b.name.toLowerCase();
+                                break;
+                            case 'price':
+                                aValue = parseFloat(a.product_item?.price || 0);
+                                bValue = parseFloat(b.product_item?.price || 0);
+                                break;
+                            case 'created_at':
+                                aValue = new Date(a.created_at || 0);
+                                bValue = new Date(b.created_at || 0);
+                                break;
+                            default:
+                                return 0;
+                        }
+
+                        if (sortOrder === 'asc') {
+                            return aValue > bValue ? 1 : -1;
+                        } else {
+                            return aValue < bValue ? 1 : -1;
+                        }
+                    });
+                }
+
+                setProducts(products);
                 setTotalPages(1); // Since we're not implementing pagination yet
             } else {
                 setProducts([]);
@@ -74,7 +119,7 @@ const AllProducts = () => {
             // Fetch categories if not already loaded
             if (categories.length === 0) {
                 const categoriesResponse = await productService.getCategories();
-                console.log('Categories Response:', categoriesResponse); // Debug log
+                console.log('Categories Response:', categoriesResponse);
 
                 if (categoriesResponse && categoriesResponse.success && categoriesResponse.data) {
                     setCategories(categoriesResponse.data);
@@ -87,17 +132,21 @@ const AllProducts = () => {
         } finally {
             setLoading(false);
         }
-    }, [page, searchTerm, categoryFilter, sortBy, sortOrder, categories.length]);
+    }, [page, currentSearchTerm, categoryFilter, sortBy, sortOrder, categories.length]); // Using currentSearchTerm instead of searchTerm
 
     // Load products and categories
     useEffect(() => {
         loadData();
     }, [loadData]);
 
-    const handleSearch = (e) => {
+    const handleSearch = () => {
+        setCurrentSearchTerm(searchTerm); // Update the current search term
+        setPage(1); // Reset to first page when searching
+    };
+
+    const handleKeyPress = (e) => {
         if (e.key === 'Enter') {
-            setPage(1); // Reset to first page when searching
-            loadData();
+            handleSearch();
         }
     };
 
@@ -108,6 +157,7 @@ const AllProducts = () => {
             setSortBy(field);
             setSortOrder('asc');
         }
+        setPage(1); // Reset to first page when changing sort
     };
 
     if (loading) {
@@ -123,6 +173,13 @@ const AllProducts = () => {
 
     return (
         <div className="container py-5">
+            {notification && (
+                <Notification
+                    message={notification.message}
+                    type={notification.type}
+                    onClose={() => setNotification(null)}
+                />
+            )}
             {error && (
                 <div className="alert alert-danger alert-dismissible fade show" role="alert"
                     style={{ borderRadius: '12px', border: 'none', background: 'rgba(255, 77, 77, 0.1)' }}>
@@ -173,9 +230,9 @@ const AllProducts = () => {
                                 border: 'none'
                             }}
                         >
-                            <option value="name">Sort by Name</option>
-                            <option value="price">Sort by Price</option>
-                            <option value="createdAt">Sort by Date</option>
+                            <option value="name">Sort by Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}</option>
+                            <option value="price">Sort by Price {sortBy === 'price' && (sortOrder === 'asc' ? '↑' : '↓')}</option>
+                            <option value="created_at">Sort by Date {sortBy === 'created_at' && (sortOrder === 'asc' ? '↑' : '↓')}</option>
                         </select>
                         <div className="input-group">
                             <input
@@ -184,7 +241,7 @@ const AllProducts = () => {
                                 placeholder="Search products..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                onKeyPress={handleSearch}
+                                onKeyPress={handleKeyPress}
                                 style={{
                                     padding: '12px 16px',
                                     borderRadius: '12px',
@@ -195,10 +252,7 @@ const AllProducts = () => {
                             <button
                                 className="btn"
                                 type="button"
-                                onClick={() => {
-                                    setPage(1);
-                                    loadData();
-                                }}
+                                onClick={handleSearch}
                                 style={{
                                     background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
                                     color: 'white',
@@ -365,4 +419,4 @@ const AllProducts = () => {
     );
 };
 
-export default AllProducts; 
+export default AllProducts;
