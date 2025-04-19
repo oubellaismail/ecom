@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNotification } from '../context/NotificationContext';
 
 const ProductCard = ({ product }) => {
     const navigate = useNavigate();
     const { user } = useAuth();
     const [imageError, setImageError] = useState(false);
+    const { showNotification } = useNotification();
 
     // Log the entire product object to see what we're working with
     console.log('ProductCard received product:', product);
@@ -34,13 +36,13 @@ const ProductCard = ({ product }) => {
 
             const result = await cartService.addToCart(cartItem);
             if (result.success) {
-                alert('Product added to cart successfully!');
+                showNotification('Product added to cart successfully!', 'success');
             } else {
-                alert(result.error || 'Error adding product to cart. Please try again.');
+                showNotification(result.error || 'Error adding product to cart. Please try again.', 'error');
             }
         } catch (error) {
             console.error('Error adding to cart:', error);
-            alert('Error adding product to cart. Please try again.');
+            showNotification('Error adding product to cart. Please try again.', 'error');
         }
     };
 

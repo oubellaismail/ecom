@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import productService from '../api/productService';
 import cartService from '../api/cartService';
 import { useAuth } from '../context/AuthContext';
+import Notification from './Notification';
 
 const AllProducts = () => {
     const [products, setProducts] = useState([]);
@@ -15,6 +16,7 @@ const AllProducts = () => {
     const [sortBy, setSortBy] = useState('name');
     const [sortOrder, setSortOrder] = useState('asc');
     const [categories, setCategories] = useState([]);
+    const [notification, setNotification] = useState(null);
     const navigate = useNavigate();
     const { user } = useAuth();
 
@@ -36,13 +38,22 @@ const AllProducts = () => {
 
             const result = await cartService.addToCart(cartItem);
             if (result.success) {
-                alert('Product added to cart successfully!');
+                setNotification({
+                    message: 'Product added to cart successfully!',
+                    type: 'success'
+                });
             } else {
-                alert(result.error || 'Error adding product to cart. Please try again.');
+                setNotification({
+                    message: result.error || 'Error adding product to cart. Please try again.',
+                    type: 'error'
+                });
             }
         } catch (error) {
             console.error('Error adding to cart:', error);
-            alert('Error adding product to cart. Please try again.');
+            setNotification({
+                message: 'Error adding product to cart. Please try again.',
+                type: 'error'
+            });
         }
     };
 
@@ -123,6 +134,13 @@ const AllProducts = () => {
 
     return (
         <div className="container py-5">
+            {notification && (
+                <Notification
+                    message={notification.message}
+                    type={notification.type}
+                    onClose={() => setNotification(null)}
+                />
+            )}
             {error && (
                 <div className="alert alert-danger alert-dismissible fade show" role="alert"
                     style={{ borderRadius: '12px', border: 'none', background: 'rgba(255, 77, 77, 0.1)' }}>

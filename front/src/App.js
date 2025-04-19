@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { NotificationProvider } from './context/NotificationContext';
 import Navbar from './components/Navbar';
 import SignIn from './components/SignIn';
 import SignUp from './components/SignUp';
@@ -45,61 +46,63 @@ function App() {
   return (
     <CartProvider>
       <AuthProvider>
-        <Router>
-          <div className="d-flex flex-column min-vh-100">
-            <Navbar />
-            <main className="flex-grow-1">
-              <Routes>
-                <Route path="/signin" element={<SignIn />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/signup" element={<SignUp />} />
-                <Route path="/order" element={<OrderValidation />} />
-                <Route path="/discount" element={<DiscountCoupons />} />
-                <Route
-                  path="/AdminDashboard"
-                  element={
-                    <ProtectedAdminRoute>
-                      <AdminDashboard />
-                    </ProtectedAdminRoute>
-                  }
-                />
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedAdminRoute>
-                      <Dashboard />
-                    </ProtectedAdminRoute>
-                  }
-                />
-                <Route
-                  path="/profile"
-                  element={
-                    <ProtectedAdminRoute>
-                      <Profile />
-                    </ProtectedAdminRoute>
-                  }
-                />
-                <Route path="/" element={<HomePage />} />
-                <Route path="/cart" element={<Cart />} />
-                <Route path="/checkout" element={<Checkout />} />
-                <Route path="/checkout/success" element={<CheckoutSuccess />} />
-                <Route
-                  path="/edit-profile"
-                  element={
-                    <ProtectedAdminRoute>
-                      <EditProfile />
-                    </ProtectedAdminRoute>
-                  }
-                />
-                <Route path="/product/:id" element={<ViewDetails />} />
-                <Route path="/shop" element={<AllProducts />} />
-                <Route path="/about" element={<About />} />
-              </Routes>
-            </main>
-            <Footer />
-          </div>
-        </Router>
+        <NotificationProvider>
+          <Router>
+            <div className="d-flex flex-column min-vh-100">
+              <Navbar />
+              <main className="flex-grow-1">
+                <Routes>
+                  <Route path="/signin" element={<SignIn />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/signup" element={<SignUp />} />
+                  <Route path="/order" element={<OrderValidation />} />
+                  <Route path="/discount" element={<DiscountCoupons />} />
+                  <Route
+                    path="/AdminDashboard"
+                    element={
+                      <ProtectedAdminRoute>
+                        <AdminDashboard />
+                      </ProtectedAdminRoute>
+                    }
+                  />
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <ProtectedAdminRoute>
+                        <Dashboard />
+                      </ProtectedAdminRoute>
+                    }
+                  />
+                  <Route
+                    path="/profile"
+                    element={
+                      <ProtectedAdminRoute>
+                        <Profile />
+                      </ProtectedAdminRoute>
+                    }
+                  />
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/cart" element={<Cart />} />
+                  <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/checkout/success" element={<CheckoutSuccess />} />
+                  <Route
+                    path="/edit-profile"
+                    element={
+                      <ProtectedAdminRoute>
+                        <EditProfile />
+                      </ProtectedAdminRoute>
+                    }
+                  />
+                  <Route path="/product/:id" element={<ViewDetails />} />
+                  <Route path="/shop" element={<AllProducts />} />
+                  <Route path="/about" element={<About />} />
+                </Routes>
+              </main>
+              <Footer />
+            </div>
+          </Router>
+        </NotificationProvider>
       </AuthProvider>
     </CartProvider>
   );
