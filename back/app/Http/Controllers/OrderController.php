@@ -395,13 +395,8 @@ class OrderController extends Controller
                 ]);
 
                 
-                return response()->json([
-                    'success' => true,
-                    'data' => [
-                        'order_number' => $order->order_number
-                    ],
-                    'message' => 'Payment completed and order created successfully'
-                ]);
+                return redirect(config('app.frontend_url') . '/checkout/success?order_number=' . $order->order_number);
+
             });
         } catch (\Exception $e) {
             Log::error('Payment callback error: ' . $e->getMessage(), [
@@ -409,10 +404,7 @@ class OrderController extends Controller
                 'request' => $request->all()
             ]);
             
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred while processing payment: ' . $e->getMessage()
-            ], 500);
+            return redirect(config('app.frontend_url') . '/checkout/failed?error=server_error');
         }
     }
     

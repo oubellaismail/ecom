@@ -9,7 +9,7 @@ const CategoryCard = ({ category, products }) => {
     <div className="col-12 mb-5">
       <div className="category-section">
         <div className="category-header mb-4">
-        </div>
+          </div>
         <div className="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
           {products.map(product => {
             // Transform the product data to match the expected structure
@@ -36,7 +36,7 @@ const CategoryCard = ({ category, products }) => {
             return (
               <div key={product.id} className="col">
                 <ProductCard product={transformedProduct} />
-              </div>
+          </div>
             );
           })}
         </div>

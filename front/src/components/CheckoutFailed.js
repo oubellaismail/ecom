@@ -1,13 +1,13 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Container, Row, Col, Button } from 'react-bootstrap';
-import { FaCheckCircle, FaHome } from 'react-icons/fa';
+import { FaTimesCircle, FaHome, FaRedo } from 'react-icons/fa';
 
-const CheckoutSuccess = () => {
+const CheckoutFailed = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const searchParams = new URLSearchParams(location.search);
-    const orderNumber = searchParams.get('order_number');
+    const errorMessage = searchParams.get('error') || 'Payment processing failed';
 
     return (
         <section className="py-5 min-vh-100 d-flex align-items-center" style={{ 
@@ -28,33 +28,33 @@ const CheckoutSuccess = () => {
             <Container>
                 <Row className="justify-content-center w-100">
                     <Col md={8} lg={6} className="text-center">
-                        <div className="success-animation mb-4" style={{
+                        <div className="error-animation mb-4" style={{
                             animation: 'scaleIn 0.5s ease-out'
                         }}>
                             <div style={{
                                 width: '120px',
                                 height: '120px',
                                 borderRadius: '50%',
-                                background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
+                                background: 'linear-gradient(90deg, #ff4d4d, #ff6b6b)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 margin: '0 auto',
                                 boxShadow: '0 4px 15px rgba(255, 77, 77, 0.2)'
                             }}>
-                                <FaCheckCircle size={60} color="white" />
+                                <FaTimesCircle size={60} color="white" />
                             </div>
                         </div>
                         
                         <h1 className="display-4 mb-4 fw-bold" style={{ 
-                            background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
+                            background: 'linear-gradient(90deg, #ff4d4d, #ff6b6b)',
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
                             letterSpacing: '-0.5px',
                             position: 'relative',
                             paddingBottom: '1rem'
                         }}>
-                            Order Confirmed!
+                            Payment Failed
                             <div style={{
                                 position: 'absolute',
                                 bottom: 0,
@@ -62,7 +62,7 @@ const CheckoutSuccess = () => {
                                 transform: 'translateX(-50%)',
                                 width: '80px',
                                 height: '4px',
-                                background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
+                                background: 'linear-gradient(90deg, #ff4d4d, #ff6b6b)',
                                 borderRadius: '2px'
                             }}></div>
                         </h1>
@@ -72,10 +72,10 @@ const CheckoutSuccess = () => {
                             fontSize: '1.25rem',
                             lineHeight: '1.6'
                         }}>
-                            Thank you for your purchase! Your order has been successfully placed.
+                            {errorMessage}
                         </p>
 
-                        <div className="order-details p-5 mb-5" style={{ 
+                        <div className="error-details p-5 mb-5" style={{ 
                             background: 'rgba(255, 255, 255, 0.8)',
                             backdropFilter: 'blur(10px)',
                             borderRadius: '16px',
@@ -87,32 +87,18 @@ const CheckoutSuccess = () => {
                                 fontWeight: '600',
                                 fontSize: '1.5rem'
                             }}>
-                                Order Details
+                                What to do next?
                             </h3>
-                            <div className="order-number">
-                                <span style={{ 
-                                    color: '#6c757d',
-                                    fontSize: '1.1rem',
-                                    display: 'block',
-                                    marginBottom: '0.5rem'
-                                }}>
-                                    Order Number
-                                </span>
-                                <h2 className="mt-2" style={{ 
-                                    background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
-                                    fontWeight: '700',
-                                    letterSpacing: '1px',
-                                    fontSize: '2rem',
-                                    margin: '0'
-                                }}>
-                                    {orderNumber}
-                                </h2>
-                            </div>
+                            <p style={{ 
+                                color: '#6c757d',
+                                fontSize: '1.1rem',
+                                lineHeight: '1.6'
+                            }}>
+                                Please try again or contact our support team if the problem persists.
+                            </p>
                         </div>
 
-                        <div className="action-buttons">
+                        <div className="action-buttons d-flex justify-content-center gap-3">
                             <Button 
                                 variant="outline-danger" 
                                 onClick={() => navigate('/')}
@@ -130,6 +116,24 @@ const CheckoutSuccess = () => {
                             >
                                 <FaHome className="me-2" />
                                 Back to Home
+                            </Button>
+                            <Button 
+                                variant="danger" 
+                                onClick={() => navigate('/checkout')}
+                                style={{ 
+                                    padding: '8px 20px',
+                                    borderRadius: '12px',
+                                    fontWeight: '500',
+                                    fontSize: '0.95rem',
+                                    background: 'linear-gradient(90deg, #ff4d4d, #ff6b6b)',
+                                    border: 'none',
+                                    transition: 'all 0.3s ease',
+                                    boxShadow: '0 4px 15px rgba(255, 77, 77, 0.2)'
+                                }}
+                                className="hover-scale"
+                            >
+                                <FaRedo className="me-2" />
+                                Try Again
                             </Button>
                         </div>
                     </Col>
@@ -149,8 +153,6 @@ const CheckoutSuccess = () => {
                         }
                         .hover-scale:hover {
                             transform: scale(1.05);
-                            background-color: #ff4d4d !important;
-                            color: white !important;
                             box-shadow: 0 6px 20px rgba(255, 77, 77, 0.2) !important;
                         }
                         .hover-scale {
@@ -163,4 +165,4 @@ const CheckoutSuccess = () => {
     );
 };
 
-export default CheckoutSuccess; 
+export default CheckoutFailed; 

@@ -80,17 +80,19 @@ const orderService = {
     },
 
     // Handle payment callback
-    handlePaymentCallback: async (paymentId, token, payerId) => {
+    handlePaymentCallback: async (paymentId, token, sessionId) => {
         try {
             const response = await axiosInstance.get('/payments/success', {
                 params: {
                     payment_id: paymentId,
                     token: token,
-                    payer_id: payerId
+                    session_id: sessionId
                 }
             });
+            console.log('Payment callback response:', response.data);
             return response.data;
         } catch (error) {
+            console.error('Payment callback error:', error.response?.data || error);
             throw error.response?.data || error;
         }
     },
