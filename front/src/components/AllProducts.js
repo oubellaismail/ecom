@@ -12,6 +12,7 @@ const AllProducts = () => {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
+    const [currentSearchTerm, setCurrentSearchTerm] = useState(''); // New state to store the current search term
     const [categoryFilter, setCategoryFilter] = useState('All');
     const [sortBy, setSortBy] = useState('name');
     const [sortOrder, setSortOrder] = useState('asc');
@@ -66,7 +67,7 @@ const AllProducts = () => {
             // Fetch products with filters
             const response = await productService.getProducts({
                 page,
-                search: searchTerm,
+                search: currentSearchTerm, // Using currentSearchTerm instead of searchTerm
                 category: categoryFilter === 'All' ? '' : categoryFilter,
                 sortBy,
                 sortOrder
@@ -131,17 +132,21 @@ const AllProducts = () => {
         } finally {
             setLoading(false);
         }
-    }, [page, searchTerm, categoryFilter, sortBy, sortOrder, categories.length]);
+    }, [page, currentSearchTerm, categoryFilter, sortBy, sortOrder, categories.length]); // Using currentSearchTerm instead of searchTerm
 
     // Load products and categories
     useEffect(() => {
         loadData();
     }, [loadData]);
 
-    const handleSearch = (e) => {
+    const handleSearch = () => {
+        setCurrentSearchTerm(searchTerm); // Update the current search term
+        setPage(1); // Reset to first page when searching
+    };
+
+    const handleKeyPress = (e) => {
         if (e.key === 'Enter') {
-            setPage(1); // Reset to first page when searching
-            loadData();
+            handleSearch();
         }
     };
 
@@ -236,7 +241,7 @@ const AllProducts = () => {
                                 placeholder="Search products..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                onKeyPress={handleSearch}
+                                onKeyPress={handleKeyPress}
                                 style={{
                                     padding: '12px 16px',
                                     borderRadius: '12px',
@@ -247,10 +252,7 @@ const AllProducts = () => {
                             <button
                                 className="btn"
                                 type="button"
-                                onClick={() => {
-                                    setPage(1);
-                                    loadData();
-                                }}
+                                onClick={handleSearch}
                                 style={{
                                     background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
                                     color: 'white',
@@ -417,4 +419,4 @@ const AllProducts = () => {
     );
 };
 
-export default AllProducts; 
+export default AllProducts;
