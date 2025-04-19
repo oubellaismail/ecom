@@ -72,11 +72,43 @@ const AllProducts = () => {
                 sortOrder
             });
 
-            console.log('API Response:', response); // Debug log
+            console.log('API Response:', response);
 
             // Handle the response based on its structure
             if (response && response.success && response.data) {
-                setProducts(response.data);
+                let products = response.data;
+
+                // Client-side sorting as fallback
+                if (products.length > 0) {
+                    products.sort((a, b) => {
+                        let aValue, bValue;
+
+                        switch (sortBy) {
+                            case 'name':
+                                aValue = a.name.toLowerCase();
+                                bValue = b.name.toLowerCase();
+                                break;
+                            case 'price':
+                                aValue = parseFloat(a.product_item?.price || 0);
+                                bValue = parseFloat(b.product_item?.price || 0);
+                                break;
+                            case 'created_at':
+                                aValue = new Date(a.created_at || 0);
+                                bValue = new Date(b.created_at || 0);
+                                break;
+                            default:
+                                return 0;
+                        }
+
+                        if (sortOrder === 'asc') {
+                            return aValue > bValue ? 1 : -1;
+                        } else {
+                            return aValue < bValue ? 1 : -1;
+                        }
+                    });
+                }
+
+                setProducts(products);
                 setTotalPages(1); // Since we're not implementing pagination yet
             } else {
                 setProducts([]);
@@ -86,7 +118,7 @@ const AllProducts = () => {
             // Fetch categories if not already loaded
             if (categories.length === 0) {
                 const categoriesResponse = await productService.getCategories();
-                console.log('Categories Response:', categoriesResponse); // Debug log
+                console.log('Categories Response:', categoriesResponse);
 
                 if (categoriesResponse && categoriesResponse.success && categoriesResponse.data) {
                     setCategories(categoriesResponse.data);
@@ -120,6 +152,7 @@ const AllProducts = () => {
             setSortBy(field);
             setSortOrder('asc');
         }
+        setPage(1); // Reset to first page when changing sort
     };
 
     if (loading) {
@@ -192,9 +225,9 @@ const AllProducts = () => {
                                 border: 'none'
                             }}
                         >
-                            <option value="name">Sort by Name</option>
-                            <option value="price">Sort by Price</option>
-                            <option value="createdAt">Sort by Date</option>
+                            <option value="name">Sort by Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}</option>
+                            <option value="price">Sort by Price {sortBy === 'price' && (sortOrder === 'asc' ? '↑' : '↓')}</option>
+                            <option value="created_at">Sort by Date {sortBy === 'created_at' && (sortOrder === 'asc' ? '↑' : '↓')}</option>
                         </select>
                         <div className="input-group">
                             <input
