@@ -1,41 +1,72 @@
-name: Deploy to Server
+name: Deploy to Production
 
 on:
   push:
     branches:
-      - master
+      - frontbase/front1
+
+env:
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+  SERVER_HOST: ${{ secrets.SERVER_HOST }}
+  SERVER_USER: ${{ secrets.SERVER_USER }}
+  SSL_CERTIFICATE: ${{ secrets.SSL_CERTIFICATE }}
+  SSL_PRIVATE_KEY: ${{ secrets.SSL_PRIVATE_KEY }}
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Build and push Docker image
-        run: |
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USER }}" --password-stdin
-          docker build -t ${{ secrets.DOCKER_USER }}/your-app:latest .
-          docker push ${{ secrets.DOCKER_USER }}/your-app:latest
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-      - name: Deploy to server via SSH
-        uses: appleboy/ssh-action@v0.1.10
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
         with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            docker pull ${{ secrets.DOCKER_USER }}/your-app:latest
-            docker stop your-app || true
-            docker rm your-app || true
-            docker run -d --name your-app -p 80:80 \
-              -e APP_KEY=${{ secrets.APP_KEY }} \
-              -e DB_CONNECTION=mysql \
-              -e DB_HOST=${{ secrets.DB_HOST }} \
-              -e DB_DATABASE=${{ secrets.DB_DATABASE }} \
-              -e DB_USERNAME=${{ secrets.DB_USERNAME }} \
-              -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-              ${{ secrets.DOCKER_USER }}/your-app:latest
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
 
-            docker exec your-app php artisan migrate --force
+      - name: Build and push frontend
+        uses: docker/build-push-action@v4
+        with:
+          context: ./front
+          file: ./front/Dockerfile.prod
+          push: true
+          tags: ${{ env.DOCKERHUB_USERNAME }}/front:latest
+
+      - name: Build and push backend
+        uses: docker/build-push-action@v4
+        with:
+          context: ./back
+          file: ./back/Dockerfile.prod
+          push: true
+          tags: ${{ env.DOCKERHUB_USERNAME }}/back:latest
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.SERVER_HOST }}
+          username: ${{ env.SERVER_USER }}
+          key: ${{ env.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/app
+            
+            # Create SSL certificates directory if it doesn't exist
+            mkdir -p ssl_certs
+            
+            # Write SSL certificates from secrets
+            echo "${{ env.SSL_CERTIFICATE }}" > ssl_certs/fullchain.pem
+            echo "${{ env.SSL_PRIVATE_KEY }}" > ssl_certs/3assasa.software.key
+            
+            # Set proper permissions for SSL certificates
+            chmod 644 ssl_certs/fullchain.pem
+            chmod 600 ssl_certs/3assasa.software.key
+            
+            # Pull and start containers
+            docker-compose -f docker-compose.prod.yml pull
+            docker-compose -f docker-compose.prod.yml up -d
+            docker system prune -f
