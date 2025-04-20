@@ -3,7 +3,7 @@ name: Deploy to Production
 on:
   push:
     branches:
-      - frontbase/front1
+      - master
 
 env:
   DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
